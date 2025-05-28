@@ -285,7 +285,7 @@ QPushButton[state=&quot;0&quot;] {
                   <bool>false</bool>
                  </property>
                  <property name="echoMode">
-                  <enum>QLineEdit::EchoMode::Normal</enum>
+                  <enum>QLineEdit::EchoMode::Password</enum>
                  </property>
                 </widget>
                </item>

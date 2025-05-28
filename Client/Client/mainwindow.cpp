@@ -160,6 +160,8 @@ void MainWindow::SetupLogReg()
             ui->grbLog, &QGroupBox::setEnabled);
     connect(ui->chbReg, &QCheckBox::toggled,
             ui->grbReg, &QGroupBox::setEnabled);
+    connect(ui->chbReg, &QCheckBox::toggled,
+            ui->lnPassword, &QWidget::setEnabled);
 
     connect(ui->btnReg, &QPushButton::clicked, this, [=]() {
         QString fn = ui->lnFname->text();
@@ -175,10 +177,9 @@ void MainWindow::SetupLogReg()
 
 void MainWindow::EmailRegex()
 {
-    // Don’t call setValidator()
     connect(ui->lnEmail, &QLineEdit::editingFinished, this, [this]() {
         const QString text = ui->lnEmail->text();
-        // A tighter regex that enforces local@domain.tld, for example:
+        // A tight regex that enforces local@domain.tld, for example:
         static const QRegularExpression re(R"(^[^@\s]+@[^@\s]+\.[^@\s]+$)");
         if (!re.match(text).hasMatch()) {
             QMessageBox::warning(this,
