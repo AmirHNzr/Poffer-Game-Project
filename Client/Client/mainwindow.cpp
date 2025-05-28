@@ -11,7 +11,11 @@ MainWindow::MainWindow(QWidget *parent)
     //Center the widgets
     SetupLayout();
     //Whenever user checks register the login disbales and vice verca
-    SetupLogReg();
+    SetupLogRegButton();
+    //Setting up register connections
+    SetupRegister();
+    //Setting up login connections
+    SetupLogin();
     //Checking email
     EmailRegex();
 }
@@ -146,7 +150,7 @@ void MainWindow::SetupLayout()
     outer->setColumnStretch(2,1);
 }
 
-void MainWindow::SetupLogReg()
+void MainWindow::SetupLogRegButton()
 {
     connect(ui->chbLog, &QCheckBox::toggled,this, [=](bool checked){
         if (checked)
@@ -160,9 +164,17 @@ void MainWindow::SetupLogReg()
             ui->grbLog, &QGroupBox::setEnabled);
     connect(ui->chbReg, &QCheckBox::toggled,
             ui->grbReg, &QGroupBox::setEnabled);
+
+    //There is a bug for password line edits that i couldn't find so fixed this way:
     connect(ui->chbReg, &QCheckBox::toggled,
             ui->lnPassword, &QWidget::setEnabled);
+    connect(ui->chbLog, &QCheckBox::toggled,
+            ui->lnPasswordLog, &QWidget::setEnabled);
 
+
+}
+
+void MainWindow::SetupRegister(){
     connect(ui->btnReg, &QPushButton::clicked, this, [=]() {
         QString fn = ui->lnFname->text();
         QString ln = ui->lnLname->text();
@@ -171,7 +183,14 @@ void MainWindow::SetupLogReg()
         QString user = ui->lnUsername->text();
         QString pass = ui->lnPassword->text();
         _controller.registerUser(fn,ln,num,email,user,pass);
+    });
+}
 
+void MainWindow::SetupLogin(){
+    connect(ui->btnLog, &QPushButton::clicked, this, [=]() {
+        QString user = ui->lnUsernameLog->text();
+        QString pass = ui->lnPasswordLog->text();
+        _controller.loginUser(user,pass);
     });
 }
 

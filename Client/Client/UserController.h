@@ -6,6 +6,8 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMessageBox>
+#include <QCryptographicHash>
+
 class UserController : public QObject
 {
     Q_OBJECT
@@ -25,6 +27,8 @@ public slots:
     void registerUser(const QString &firstname,const QString &lastname,
                       const QString &number,const QString &email,
                       const QString &username, const QString &password);
+
+    void loginUser(const QString &username, const QString &password);
 signals:
     void connected();
     void disconnected();

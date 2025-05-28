@@ -51,17 +51,46 @@ void UserController::sendJson(const QJsonObject &obj)
 void UserController::registerUser(const QString &firstname,const QString &lastname,const QString &number,const QString &email,
                                   const QString &username, const QString &password)
 {
+
     if(_socket.isOpen()){
-    QJsonObject req {
-        { "cmd",      "REGISTER"        },
-        { "firstname",firstname         },
-        { "lastname", lastname          },
-        { "number",   number            },
-        { "email",    email             },
-        { "username", username          },
-        { "password", password          }
-    };
-        sendJson(req);}
+        //Ciphering the password (note: works only on QByteArray)
+        QByteArray passByte = password.toUtf8();
+        QByteArray hashBytes = QCryptographicHash::hash(passByte,QCryptographicHash::Sha256);
+        QString passBase64 = hashBytes.toBase64();
+
+        //Creating a json file to make clear the command and files
+        QJsonObject req {
+            { "cmd",      "REGISTER"        },
+            { "firstname",firstname         },
+            { "lastname", lastname          },
+            { "number",   number            },
+            { "email",    email             },
+            { "username", username          },
+            { "password", passBase64        }
+                        };
+        sendJson(req);
+    }
+    else{
+        QMessageBox::warning(nullptr,"Connection Error","You are not connected to the server");
+    }
+}
+
+void UserController::loginUser(const QString &username, const QString &password)
+{
+    if(_socket.isOpen()){
+        //Ciphering the password (note: works only on QByteArray)
+        QByteArray passByte = password.toUtf8();
+        QByteArray hashBytes = QCryptographicHash::hash(passByte,QCryptographicHash::Sha256);
+        QString passBase64 = hashBytes.toBase64();
+
+        //Creating a json file to make clear the command and files
+        QJsonObject req {
+            { "cmd",      "LOGIN"        },
+            { "username", username          },
+            { "password", passBase64        }
+        };
+        sendJson(req);
+    }
     else{
         QMessageBox::warning(nullptr,"Connection Error","You are not connected to the server");
     }

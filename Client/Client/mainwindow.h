@@ -44,7 +44,9 @@ private:
 
     void SetupConnection();
     void SetupLayout();
-    void SetupLogReg();
+    void SetupLogRegButton();
+    void SetupRegister();
+    void SetupLogin();
     void EmailRegex();
 };
 #endif // MAINWINDOW_H
