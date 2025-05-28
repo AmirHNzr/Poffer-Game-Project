@@ -10,6 +10,8 @@
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QSizePolicy>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -42,5 +44,7 @@ private:
 
     void SetupConnection();
     void SetupLayout();
+    void SetupLogReg();
+    void EmailRegex();
 };
 #endif // MAINWINDOW_H

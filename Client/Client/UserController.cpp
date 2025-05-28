@@ -10,6 +10,7 @@ UserController::UserController(QObject *parent)
     connect(&_socket,&QTcpSocket::errorOccurred,this,&UserController::errorOccurred);
 
 
+
 }
 
 void UserController::EstablishConnection(QString ip, int port)
@@ -47,15 +48,23 @@ void UserController::sendJson(const QJsonObject &obj)
 
 }
 
-void UserController::registerUser(const QString &username, const QString &password, const QString &email)
+void UserController::registerUser(const QString &firstname,const QString &lastname,const QString &number,const QString &email,
+                                  const QString &username, const QString &password)
 {
+    if(_socket.isOpen()){
     QJsonObject req {
         { "cmd",      "REGISTER"        },
+        { "firstname",firstname         },
+        { "lastname", lastname          },
+        { "number",   number            },
+        { "email",    email             },
         { "username", username          },
-        { "password", password          },
-        { "email",    email             }
+        { "password", password          }
     };
-    sendJson(req);
+        sendJson(req);}
+    else{
+        QMessageBox::warning(nullptr,"Connection Error","You are not connected to the server");
+    }
 }
 
 void UserController::socket_stateChanged(QAbstractSocket::SocketState state)

@@ -5,6 +5,7 @@
 #include <QObject>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMessageBox>
 class UserController : public QObject
 {
     Q_OBJECT
@@ -21,9 +22,9 @@ public:
     void sendJson(const QJsonObject& obj);
 public slots:
     // Registeration slot to send data to server
-    void registerUser(const QString& username,
-                      const QString& password,
-                      const QString& email);
+    void registerUser(const QString &firstname,const QString &lastname,
+                      const QString &number,const QString &email,
+                      const QString &username, const QString &password);
 signals:
     void connected();
     void disconnected();

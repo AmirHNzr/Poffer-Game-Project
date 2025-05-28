@@ -6,8 +6,14 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    //Setting connection up
     SetupConnection();
+    //Center the widgets
     SetupLayout();
+    //Whenever user checks register the login disbales and vice verca
+    SetupLogReg();
+    //Checking email
+    EmailRegex();
 }
 
 MainWindow::~MainWindow()
@@ -139,6 +145,52 @@ void MainWindow::SetupLayout()
     outer->setColumnStretch(1,0);
     outer->setColumnStretch(2,1);
 }
+
+void MainWindow::SetupLogReg()
+{
+    connect(ui->chbLog, &QCheckBox::toggled,this, [=](bool checked){
+        if (checked)
+            ui->chbReg->setChecked(false);
+    });
+    connect(ui->chbReg, &QCheckBox::toggled,this, [=](bool checked){
+        if (checked)
+            ui->chbLog->setChecked(false);
+    });
+    connect(ui->chbLog, &QCheckBox::toggled,
+            ui->grbLog, &QGroupBox::setEnabled);
+    connect(ui->chbReg, &QCheckBox::toggled,
+            ui->grbReg, &QGroupBox::setEnabled);
+
+    connect(ui->btnReg, &QPushButton::clicked, this, [=]() {
+        QString fn = ui->lnFname->text();
+        QString ln = ui->lnLname->text();
+        QString num = ui->lnPhone->text();
+        QString email = ui->lnEmail->text();
+        QString user = ui->lnUsername->text();
+        QString pass = ui->lnPassword->text();
+        _controller.registerUser(fn,ln,num,email,user,pass);
+
+    });
+}
+
+void MainWindow::EmailRegex()
+{
+    // Don’t call setValidator()
+    connect(ui->lnEmail, &QLineEdit::editingFinished, this, [this]() {
+        const QString text = ui->lnEmail->text();
+        // A tighter regex that enforces local@domain.tld, for example:
+        static const QRegularExpression re(R"(^[^@\s]+@[^@\s]+\.[^@\s]+$)");
+        if (!re.match(text).hasMatch()) {
+            QMessageBox::warning(this,
+                                 tr("Invalid Email"),
+                                 tr("“%1” is not a valid email address.").arg(text));
+            ui->lnEmail->clear();
+            ui->lnEmail->setFocus();
+        }
+    });
+
+}
+
 
 
 
