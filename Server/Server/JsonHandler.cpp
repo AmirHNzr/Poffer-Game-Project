@@ -19,6 +19,10 @@ void JsonHandler::Commands(const QJsonObject& obj)
         //Processing command
         _loginHandler(obj);
     }
+    else if(cmd == "REGISTER"){
+        _registerHandler[dataBase];
+        _registerHandler(obj);
+    }
 
 
 }
