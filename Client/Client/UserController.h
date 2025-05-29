@@ -7,6 +7,7 @@
 #include <QJsonObject>
 #include <QMessageBox>
 #include <QCryptographicHash>
+#include"JsonHandler.h"
 
 class UserController : public QObject
 {
@@ -34,13 +35,17 @@ signals:
     void disconnected();
     void stateChanged(QAbstractSocket::SocketState);
     void errorOccurred(QAbstractSocket::SocketError);
+    void jsonReceived(QJsonDocument);
 
-    private slots:
+private slots:
     void socket_stateChanged(QAbstractSocket::SocketState state);
+    void OnReadyRead();
 
 
 private:
     QTcpSocket _socket;
+    QByteArray _buffer;
+    JsonHandler _jsonHandler;
     QString ip;
     int port;
 };

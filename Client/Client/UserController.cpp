@@ -8,7 +8,8 @@ UserController::UserController(QObject *parent)
     connect(&_socket,&QTcpSocket::disconnected,this,&UserController::disconnected);
     connect(&_socket,&QTcpSocket::stateChanged,this,&UserController::socket_stateChanged);
     connect(&_socket,&QTcpSocket::errorOccurred,this,&UserController::errorOccurred);
-
+    connect(&_socket, &QTcpSocket::readyRead,this,&UserController::OnReadyRead);
+    connect(this,&UserController::jsonReceived,&_jsonHandler, &JsonHandler::JsonReceived);
 
 
 }
@@ -102,4 +103,17 @@ void UserController::socket_stateChanged(QAbstractSocket::SocketState state)
         _socket.close();
     }
     emit stateChanged(state);
+}
+
+void UserController::OnReadyRead()
+{
+    _buffer += _socket.readAll();
+
+    QJsonParseError err;
+    auto doc = QJsonDocument::fromJson(_buffer, &err);
+
+    if (err.error == QJsonParseError::NoError && doc.isObject()) {
+        emit jsonReceived(doc);
+        _buffer.clear();
+    }
 }
