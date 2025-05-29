@@ -8,13 +8,15 @@ class Users
 {
 public:
     Users();
-
+    ~Users();
     bool AddUser(User);
     bool EditUser(User);
+    static QHash<QString, User>* getData() ;
+
 private:
     //i am using Username as the key for each user in this map
     //std::unordered_map<QString,User> data;
-    QHash<QString,User> data;
+    QHash<QString,User>* data;
 
 };
 

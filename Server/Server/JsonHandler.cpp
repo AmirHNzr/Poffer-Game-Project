@@ -1,6 +1,6 @@
 #include "JsonHandler.h"
 
-JsonHandler::JsonHandler() {}
+JsonHandler::JsonHandler():dataBase{nullptr} {}
 
 void JsonHandler::Commands(const QJsonObject& obj)
 {

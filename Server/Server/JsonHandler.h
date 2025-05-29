@@ -6,6 +6,7 @@
 #include <QJsonParseError>
 #include <QMessageBox>
 #include"LoginCommand.h"
+#include"Users.h"
 
 
 class JsonHandler
@@ -19,7 +20,7 @@ public:
 private:
     QJsonParseError _parseError;
     LoginCommand _loginHandler;
-
+    Users* dataBase;
 
 
 

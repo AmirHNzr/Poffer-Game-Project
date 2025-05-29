@@ -18,4 +18,10 @@ void LoginCommand::operator()(const QJsonObject& obj)
 {
     this->obj = obj;
 
+
+}
+
+void LoginCommand::operator[](Users *u)
+{
+    data = u;
 }

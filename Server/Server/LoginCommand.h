@@ -10,9 +10,11 @@ public:
     QJsonObject Execute(const QJsonObject& payload) override;
     bool Validate(const QJsonObject& payload) override;
 
-    void operator()(const QJsonObject& obj);
+    void operator()(const QJsonObject& obj) override;
+    void operator[](Users* u) override;
 private:
     QJsonObject obj;
+    Users* data;
 
 };
 
