@@ -17,7 +17,7 @@ public:
     QJsonObject BytesToJson(const QByteArray&);
 
 private:
-    QJsonParseError* _parseError;
+    QJsonParseError _parseError;
     LoginCommand _loginHandler;
 
 

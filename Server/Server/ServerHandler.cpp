@@ -6,6 +6,7 @@ ServerHandler::ServerHandler(QObject *parent,int port)
     _server = new QTcpServer(this);
     clients.reserve(16);
 
+
     //To handle new connections
     connect(_server,&QTcpServer::newConnection,this,&ServerHandler::OnNewConnection);
 
@@ -29,7 +30,11 @@ void ServerHandler::OnNewConnection()
     clients.insert(id,sock);
 
     connect(sock,&QTcpSocket::disconnected,this,&ServerHandler::OnClientDC);
+    //Reading data from socket
+    connect(sock, &QTcpSocket::readyRead,this, &ServerHandler::OnReadyRead);
     emit NewConnection();
+
+
 }
 
 void ServerHandler::OnClientDC(){
@@ -45,6 +50,24 @@ void ServerHandler::OnClientDC(){
     sock->deleteLater();
 
     emit NewDC();
+}
+
+void ServerHandler::OnReadyRead()
+{
+    //Who is sending
+    QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
+    if (!sock) return;
+
+    QByteArray raw = sock->readAll();
+    receivedData = _jsonHandler.BytesToJson(raw);
+    emit NewData();
+    return;
+
+}
+
+QJsonObject ServerHandler::getReceivedData() const
+{
+    return receivedData;
 }
 
 QHash<qintptr, QTcpSocket *> ServerHandler::getClients() const

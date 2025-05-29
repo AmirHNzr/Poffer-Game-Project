@@ -7,8 +7,12 @@ class Users
 {
 public:
     Users();
+
+    bool AddUser(User);
+    bool EditUser(User);
 private:
-    std::unordered_map<int,User> data;
+    //i am using Username as the key for each user in this map
+    //std::unordered_map<QString,User> data;
 
 };
 

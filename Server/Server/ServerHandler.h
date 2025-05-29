@@ -6,7 +6,7 @@
 #include <QTcpSocket>
 #include <QMessageBox>
 #include <QWidget>
-
+#include"JsonHandler.h"
 
 class ServerHandler : public QObject
 {
@@ -18,17 +18,23 @@ public:
 
     QHash<qintptr, QTcpSocket *> getClients() const;
 
+    QJsonObject getReceivedData() const;
+
 signals:
     void NewConnection();
     void NewDC();
+    void NewData();
 
 private slots:
     void OnNewConnection();
     void OnClientDC();
+    void OnReadyRead();
 private:
     QTcpServer* _server;
     QHash<qintptr, QTcpSocket*> clients;
     bool isOn;
+    JsonHandler _jsonHandler;
+    QJsonObject receivedData;
 
 };
 

@@ -25,6 +25,8 @@ void MainWindow::on_btnStartServer_clicked()
 
         connect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
         connect(_svHandler,&ServerHandler::NewDC,this,&MainWindow::NewDC);
+        connect(_svHandler,&ServerHandler::NewData,this,&MainWindow::ShowData);
+
 
     }
     else{
@@ -50,4 +52,11 @@ void MainWindow::NewDC(){
     ui->spnConnection->setValue(connectionsCount);
     ui->teServer->append("a connection removed\n");
 
+}
+
+void MainWindow::ShowData(){
+    QJsonDocument doc(_svHandler->getReceivedData());
+    QString jsonString = doc.toJson(QJsonDocument::Indented);
+
+    ui->teServer->append("\n"+jsonString);
 }

@@ -22,6 +22,7 @@ private slots:
     void on_btnStartServer_clicked();
     void NewConnection();
     void NewDC();
+    void ShowData();
 
 private:
     Ui::MainWindow *ui;
