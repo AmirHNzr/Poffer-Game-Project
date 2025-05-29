@@ -13,6 +13,10 @@ ServerHandler::ServerHandler(QObject *parent,int port)
     //If login failed, send an error json
     connect(&_jsonHandler,&JsonHandler::LogValidationFailed,this,&ServerHandler::OnSendError);
 
+    // Handling when registeration succeed
+    connect(&_jsonHandler,&JsonHandler::ValidRegister,this,&ServerHandler::OnSendError);
+
+
     //Start listening and reserving port 12345 for any client
     isOn = _server->listen(QHostAddress::AnyIPv4,port);
 
@@ -78,6 +82,7 @@ void ServerHandler::OnSendError(const QJsonObject &errorPayload)
     if (!_currentSocket)
         return;
     _currentSocket->write(bytes);
+    _currentSocket->flush();
     emit NewDataSent();
 }
 

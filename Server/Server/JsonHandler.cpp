@@ -4,6 +4,8 @@ JsonHandler::JsonHandler(QObject* parent)
     : QObject(parent),dataBase{new Users()}
 {
     connect(&_loginHandler,&LoginCommand::ValidationFailed,this,&JsonHandler::LogValidationFailed);
+    connect(&_registerHandler,&RegisterCommand::ValidationFailed,this,&JsonHandler::LogValidationFailed);
+    connect(&_registerHandler,&RegisterCommand::ExecuteSuccessfully,this,&JsonHandler::ValidRegister);
 }
 
 

@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     JsonHandler.cpp \
     LoginCommand.cpp \
+    RegisterCommand.cpp \
     ServerHandler.cpp \
     User.cpp \
     Users.cpp \
@@ -21,6 +22,7 @@ HEADERS += \
     ICommand.h \
     JsonHandler.h \
     LoginCommand.h \
+    RegisterCommand.h \
     ServerHandler.h \
     User.h \
     Users.h \

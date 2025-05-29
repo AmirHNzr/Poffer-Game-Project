@@ -2,9 +2,9 @@
 
 
 
-QJsonObject LoginCommand::Execute(const QJsonObject &payload)
+void LoginCommand::Execute(const QJsonObject &payload)
 {
-    return QJsonObject{payload};
+    return;
 }
 
 bool LoginCommand::Validate(const QJsonObject &payload)

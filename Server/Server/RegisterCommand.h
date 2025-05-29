@@ -1,16 +1,13 @@
-#ifndef LOGINCOMMAND_H
-#define LOGINCOMMAND_H
+#ifndef REGISTERCOMMAND_H
+#define REGISTERCOMMAND_H
 
 #include <QObject>
 #include "ICommand.h"
-
-class LoginCommand : public QObject, public ICommand
+class RegisterCommand : public QObject , public ICommand
 {
     Q_OBJECT
 public:
-    explicit LoginCommand(QObject* parent = nullptr)
-        : QObject(parent){}
-
+    explicit RegisterCommand(QObject *parent = nullptr);
     void Execute(const QJsonObject& payload) override;
     bool Validate(const QJsonObject& payload) override;
 
@@ -21,7 +18,6 @@ private:
     Users* data;
 signals:
     void ValidationFailed(const QJsonObject& errorPayload);
-
+    void ExecuteSuccessfully(const QJsonObject& successPayload);
 };
-
-#endif // LOGINCOMMAND_H
+#endif // REGISTERCOMMAND_H

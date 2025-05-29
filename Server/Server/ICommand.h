@@ -9,7 +9,7 @@ class ICommand
 {
 public:
     virtual ~ICommand(){}
-    virtual QJsonObject Execute(const QJsonObject& payload) = 0;
+    virtual void Execute(const QJsonObject& payload) = 0;
     virtual bool Validate(const QJsonObject& payload) = 0;
     //Processing Client Command
     virtual void operator()(const QJsonObject&) = 0;

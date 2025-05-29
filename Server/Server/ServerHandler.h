@@ -8,6 +8,7 @@
 #include <QWidget>
 #include"JsonHandler.h"
 
+
 class ServerHandler : public QObject
 {
     Q_OBJECT

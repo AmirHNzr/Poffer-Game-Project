@@ -9,7 +9,7 @@ class Users
 public:
     Users();
     ~Users();
-    bool AddUser(User);
+    bool AddUser(const User&);
     bool EditUser(User);
     QHash<QString, User>* getData() ;
 
