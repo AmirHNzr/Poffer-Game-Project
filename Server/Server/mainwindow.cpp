@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     _svHandler = nullptr;
-    ui->lnNumConnect->append(QString::number(connectionsCount));
+    ui->spnConnection->setValue(0);
 }
 
 MainWindow::~MainWindow()
@@ -19,14 +19,35 @@ MainWindow::~MainWindow()
 
 void MainWindow::on_btnStartServer_clicked()
 {
-    _svHandler = _svHandler == nullptr ? new ServerHandler(this,ui->spnPort->value()): _svHandler;
-    connect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
+    if(_svHandler == nullptr){
+        _svHandler = new ServerHandler(this,ui->spnPort->value()) ;
+        ui->btnStartServer->setText("Stop Server");
+
+        connect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
+        connect(_svHandler,&ServerHandler::NewDC,this,&MainWindow::NewDC);
+
+    }
+    else{
+        disconnect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
+        disconnect(_svHandler,&ServerHandler::NewDC,this,&MainWindow::NewDC);
+        _svHandler->disconnect();
+        ui->btnStartServer->setText("Start Server");
+        ui->spnConnection->setValue(0);
+
+        _svHandler->deleteLater();
+        _svHandler = nullptr;
+    }
 }
 
 void MainWindow::NewConnection(){
     connectionsCount++;
-    ui->lnNumConnect->append(QString::number(connectionsCount));
-    ui->teServer->append("New connection added\n");
-    ui->teServer->append(_svHandler->getClients().keyValueBegin()->second->localAddress().toString());
+    ui->spnConnection->setValue(connectionsCount);
+    ui->teServer->append("a connection added\n");
+
+}
+void MainWindow::NewDC(){
+    connectionsCount--;
+    ui->spnConnection->setValue(connectionsCount);
+    ui->teServer->append("a connection removed\n");
 
 }

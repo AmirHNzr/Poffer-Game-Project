@@ -34,6 +34,17 @@ void ServerHandler::OnNewConnection()
 
 void ServerHandler::OnClientDC(){
 
+    //Sender is the one that disconnected so we get its socket and match with the id in QHash to remove
+    auto sock = qobject_cast<QTcpSocket*>(sender());
+    disconnect(sock,&QTcpSocket::disconnected,this,&ServerHandler::OnClientDC);
+
+    if (!sock) return;
+
+    qintptr id = sock->socketDescriptor();
+    clients.remove(id);
+    sock->deleteLater();
+
+    emit NewDC();
 }
 
 QHash<qintptr, QTcpSocket *> ServerHandler::getClients() const
