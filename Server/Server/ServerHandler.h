@@ -23,7 +23,6 @@ public:
 signals:
     void NewConnection();
     void NewDC();
-    void NewData();
 
 private slots:
     void OnNewConnection();

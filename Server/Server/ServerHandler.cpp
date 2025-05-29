@@ -60,7 +60,6 @@ void ServerHandler::OnReadyRead()
 
     QByteArray raw = sock->readAll();
     receivedData = _jsonHandler.BytesToJson(raw);
-    emit NewData();
     return;
 
 }

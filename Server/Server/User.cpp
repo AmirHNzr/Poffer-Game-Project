@@ -1,5 +1,6 @@
 #include "User.h"
 
+User::User():User("","",0,"","",""){}
 
 User::User(QString fName, QString lName,int num,
            QString mail,QString user, QString pass):firstName{fName},lastName{lName}

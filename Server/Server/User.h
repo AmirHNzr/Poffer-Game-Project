@@ -8,6 +8,7 @@
 class User
 {
 public:
+    User();
     User(QString fName,QString lName,int num,QString mail,QString user,QString pass);
 
     QString getFirstName() const;
