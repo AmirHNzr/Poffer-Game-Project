@@ -12,6 +12,8 @@ SOURCES += \
     JsonHandler.cpp \
     LoginCommand.cpp \
     ServerHandler.cpp \
+    User.cpp \
+    Users.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -20,6 +22,8 @@ HEADERS += \
     JsonHandler.h \
     LoginCommand.h \
     ServerHandler.h \
+    User.h \
+    Users.h \
     mainwindow.h
 
 FORMS += \
