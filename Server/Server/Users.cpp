@@ -1,13 +1,11 @@
 #include "Users.h"
 
-Users::Users():data{nullptr} {}
+Users::Users(){}
 
-Users::~Users(){
-    delete data;
-}
+Users::~Users(){}
 
-QHash<QString, User> *Users::getData() const
+QHash<QString, User> *Users::getData()
 {
-    return data;
+    return &data;
 }
 

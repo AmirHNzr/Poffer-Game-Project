@@ -9,10 +9,11 @@
 #include"Users.h"
 
 
-class JsonHandler
+class JsonHandler : public QObject
 {
+    Q_OBJECT
 public:
-    JsonHandler();
+    explicit JsonHandler(QObject* parent = nullptr);
 
     void Commands(const QJsonObject&);
     QJsonObject BytesToJson(const QByteArray&);
@@ -21,6 +22,9 @@ private:
     QJsonParseError _parseError;
     LoginCommand _loginHandler;
     Users* dataBase;
+signals:
+    void LogValidationFailed(const QJsonObject& errorPayload);
+
 
 
 

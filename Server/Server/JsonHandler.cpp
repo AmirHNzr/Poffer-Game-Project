@@ -1,12 +1,20 @@
 #include "JsonHandler.h"
 
-JsonHandler::JsonHandler():dataBase{nullptr} {}
+JsonHandler::JsonHandler(QObject* parent)
+    : QObject(parent),dataBase{new Users()}
+{
+    connect(&_loginHandler,&LoginCommand::ValidationFailed,this,&JsonHandler::LogValidationFailed);
+}
+
 
 void JsonHandler::Commands(const QJsonObject& obj)
 {
     auto cmd = obj.value("cmd").toString().toUpper();
 
     if(cmd == "LOGIN"){
+        //Loading data
+        _loginHandler[dataBase];
+        //Processing command
         _loginHandler(obj);
     }
 

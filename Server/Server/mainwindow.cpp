@@ -25,7 +25,7 @@ void MainWindow::on_btnStartServer_clicked()
 
         connect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
         connect(_svHandler,&ServerHandler::NewDC,this,&MainWindow::NewDC);
-
+        connect(_svHandler,&ServerHandler::NewDataSent,this,&MainWindow::NewDataSent);
 
     }
     else{
@@ -52,5 +52,8 @@ void MainWindow::NewDC(){
     ui->teServer->append("a connection removed\n");
 
 }
+void MainWindow::NewDataSent(){
+    ui->teServer->append("a data sent to client\n");
 
+}
 

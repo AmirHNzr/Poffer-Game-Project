@@ -23,13 +23,16 @@ public:
 signals:
     void NewConnection();
     void NewDC();
+    void NewDataSent();
 
 private slots:
     void OnNewConnection();
     void OnClientDC();
     void OnReadyRead();
+    void OnSendError(const QJsonObject& errorPayload);
 private:
     QTcpServer* _server;
+    QTcpSocket* _currentSocket = nullptr;
     QHash<qintptr, QTcpSocket*> clients;
     bool isOn;
     JsonHandler _jsonHandler;

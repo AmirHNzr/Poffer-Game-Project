@@ -22,7 +22,7 @@ private slots:
     void on_btnStartServer_clicked();
     void NewConnection();
     void NewDC();
-
+    void NewDataSent();
 private:
     Ui::MainWindow *ui;
     ServerHandler* _svHandler;

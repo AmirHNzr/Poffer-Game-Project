@@ -10,6 +10,9 @@ ServerHandler::ServerHandler(QObject *parent,int port)
     //To handle new connections
     connect(_server,&QTcpServer::newConnection,this,&ServerHandler::OnNewConnection);
 
+    //If login failed, send an error json
+    connect(&_jsonHandler,&JsonHandler::LogValidationFailed,this,&ServerHandler::OnSendError);
+
     //Start listening and reserving port 12345 for any client
     isOn = _server->listen(QHostAddress::AnyIPv4,port);
 
@@ -58,10 +61,24 @@ void ServerHandler::OnReadyRead()
     QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
     if (!sock) return;
 
+    _currentSocket = sock;
+
     QByteArray raw = sock->readAll();
     receivedData = _jsonHandler.BytesToJson(raw);
-    return;
+    _jsonHandler.Commands(receivedData);
 
+}
+
+void ServerHandler::OnSendError(const QJsonObject &errorPayload)
+{
+    QJsonDocument doc(errorPayload);
+    QByteArray bytes = doc.toJson(QJsonDocument::Compact);
+
+
+    if (!_currentSocket)
+        return;
+    _currentSocket->write(bytes);
+    emit NewDataSent();
 }
 
 QJsonObject ServerHandler::getReceivedData() const

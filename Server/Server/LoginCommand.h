@@ -1,12 +1,16 @@
 #ifndef LOGINCOMMAND_H
 #define LOGINCOMMAND_H
 
-#include"ICommand.h"
+#include <QObject>
+#include "ICommand.h"
 
-class LoginCommand : ICommand
+class LoginCommand : public QObject, public ICommand
 {
+    Q_OBJECT
 public:
-    LoginCommand();
+    explicit LoginCommand(QObject* parent = nullptr)
+        : QObject(parent){}
+
     QJsonObject Execute(const QJsonObject& payload) override;
     bool Validate(const QJsonObject& payload) override;
 
@@ -15,6 +19,8 @@ public:
 private:
     QJsonObject obj;
     Users* data;
+signals:
+    void ValidationFailed(const QJsonObject& errorPayload);
 
 };
 
