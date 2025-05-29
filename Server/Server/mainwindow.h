@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "ServerHandler.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,7 +18,13 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void on_btnStartServer_clicked();
+    void NewConnection();
+
 private:
     Ui::MainWindow *ui;
+    ServerHandler* _svHandler;
+    static int connectionsCount;
 };
 #endif // MAINWINDOW_H
