@@ -6,15 +6,22 @@ GetHistoryCommand::GetHistoryCommand(QObject *parent)
 
 void GetHistoryCommand::Execute(const QJsonObject &payload)
 {
-    QJsonObject err;
-    err["cmd"]   = "GET_HISTORY_SUCCESS";
-    for(int i=0;!hist.empty();i++){
+    QJsonArray historyArray;
+    for(int i=0;!hist.empty() && i<3;i++){
         History itr = hist.front();
-        err["date"+QString::number(i)] = itr.date.toString();
-        err["date"+QString::number(i)] = itr.opponent;
-        err["date"+QString::number(i)] = itr.result;
-        err["date"+QString::number(i)] = itr.rounds[1]+"-"+itr.rounds[2]+"-"+itr.rounds[3];
+        hist.pop();
+
+        QJsonObject oneEntry;
+        oneEntry["date"]     = itr.date.toString(Qt::ISODate);
+        oneEntry["opponent"] = itr.opponent;
+        oneEntry["result"]   = itr.result;
+        oneEntry["rounds"]   = itr.rounds[1] + "-" + itr.rounds[2] + "-" + itr.rounds[3];
+        historyArray.append(oneEntry);
     }
+    QJsonObject err;
+    err["cmd"]     = "GET_HISTORY_SUCCESS";
+    err["history"] = historyArray;
+    err["error"] = "History loaded successfully!";
     emit ExecuteSuccessfully(err);
 }
 

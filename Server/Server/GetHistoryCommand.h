@@ -3,7 +3,7 @@
 
 #include"ICommand.h"
 #include <QObject>
-
+#include <QJsonArray>
 class GetHistoryCommand : public QObject, public ICommand
 {
     Q_OBJECT
