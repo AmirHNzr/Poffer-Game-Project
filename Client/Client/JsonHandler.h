@@ -12,7 +12,7 @@ public:
     explicit JsonHandler(QObject *parent = nullptr);
 
 signals:
-
+    void OnSuccessfulLogin();
 public slots:
     void JsonReceived(QJsonDocument);
 };

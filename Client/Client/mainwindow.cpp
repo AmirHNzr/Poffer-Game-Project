@@ -5,6 +5,11 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    _controller = new UserController(this);
+    _player = new PlayerInfo(this);
+    //Setting up user page/menu
+    _userPage = new UserPage(_controller,_player,this);
+
     ui->setupUi(this);
     //Setting connection up
     SetupConnection();
@@ -18,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent)
     SetupLogin();
     //Checking email
     EmailRegex();
+
+
 }
 
 MainWindow::~MainWindow()
@@ -27,10 +34,11 @@ MainWindow::~MainWindow()
 
 void MainWindow::SetupConnection()
 {
-    connect(&_controller, &UserController::connected, this, &MainWindow::UserConnected);
-    connect(&_controller, &UserController::disconnected, this, &MainWindow::UserDisconnected);
-    connect(&_controller, &UserController::stateChanged, this, &MainWindow::UserStateChanged);
-    connect(&_controller, &UserController::errorOccurred, this, &MainWindow::UserErrorOccurred);
+    connect(_controller, &UserController::connected, this, &MainWindow::UserConnected);
+    connect(_controller, &UserController::disconnected, this, &MainWindow::UserDisconnected);
+    connect(_controller, &UserController::stateChanged, this, &MainWindow::UserStateChanged);
+    connect(_controller, &UserController::errorOccurred, this, &MainWindow::UserErrorOccurred);
+    connect(_userPage,&QDialog::finished,this,&MainWindow::show);
 }
 
 void MainWindow::on_lnIP_textChanged(const QString &arg1)
@@ -57,11 +65,11 @@ void MainWindow::on_btnConnect_clicked()
 {
     auto ip = ui->lnIP->text();
     int port = ui->spnPort->value();
-    if (_controller.isConnected()) {
-        _controller.disconnect();
+    if (_controller->isConnected()) {
+        _controller->disconnect();
     } else {
 
-        _controller.EstablishConnection(ip,port);
+        _controller->EstablishConnection(ip,port);
     }
 }
 
@@ -182,7 +190,7 @@ void MainWindow::SetupRegister(){
         QString email = ui->lnEmail->text();
         QString user = ui->lnUsername->text();
         QString pass = ui->lnPassword->text();
-        _controller.registerUser(fn,ln,num,email,user,pass);
+        _controller->registerUser(fn,ln,num,email,user,pass);
     });
 }
 
@@ -190,7 +198,7 @@ void MainWindow::SetupLogin(){
     connect(ui->btnLog, &QPushButton::clicked, this, [=]() {
         QString user = ui->lnUsernameLog->text();
         QString pass = ui->lnPasswordLog->text();
-        _controller.loginUser(user,pass);
+        _controller->loginUser(user,pass);
     });
 }
 

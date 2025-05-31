@@ -12,6 +12,8 @@
 #include <QSizePolicy>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include"UserPage.h"
+#include"PlayerInfo.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -40,7 +42,9 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    UserController _controller;
+    UserPage* _userPage;
+    UserController* _controller;
+    PlayerInfo* _player;
 
     void SetupConnection();
     void SetupLayout();

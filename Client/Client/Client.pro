@@ -10,16 +10,21 @@ CONFIG += c++17
 
 SOURCES += \
     JsonHandler.cpp \
+    PlayerInfo.cpp \
     UserController.cpp \
+    UserPage.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     JsonHandler.h \
+    PlayerInfo.h \
     UserController.h \
+    UserPage.h \
     mainwindow.h
 
 FORMS += \
+    UserPage.ui \
     mainwindow.ui
 
 # Default rules for deployment.
