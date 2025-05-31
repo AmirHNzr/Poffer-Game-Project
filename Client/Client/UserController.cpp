@@ -10,6 +10,8 @@ UserController::UserController(QObject *parent)
     connect(&_socket,&QTcpSocket::errorOccurred,this,&UserController::errorOccurred);
     connect(&_socket, &QTcpSocket::readyRead,this,&UserController::OnReadyRead);
     connect(this,&UserController::jsonReceived,&_jsonHandler, &JsonHandler::JsonReceived);
+    connect(&_jsonHandler,&JsonHandler::OnSuccessfulLogin,this, &UserController::OnSuccessfulLogin);
+
 
 
 }

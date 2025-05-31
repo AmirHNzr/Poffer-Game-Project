@@ -36,6 +36,7 @@ signals:
     void stateChanged(QAbstractSocket::SocketState);
     void errorOccurred(QAbstractSocket::SocketError);
     void jsonReceived(QJsonDocument);
+    void OnSuccessfulLogin();
 
 private slots:
     void socket_stateChanged(QAbstractSocket::SocketState state);

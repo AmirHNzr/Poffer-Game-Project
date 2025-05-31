@@ -40,11 +40,14 @@ private slots:
     void UserStateChanged(QAbstractSocket::SocketState);
     void UserErrorOccurred(QAbstractSocket::SocketError);
 
+
 private:
     Ui::MainWindow *ui;
     UserPage* _userPage;
     UserController* _controller;
     PlayerInfo* _player;
+
+    bool permission = false;
 
     void SetupConnection();
     void SetupLayout();
