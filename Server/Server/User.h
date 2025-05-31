@@ -1,9 +1,21 @@
 #ifndef USER_H
 #define USER_H
-
-#include<unordered_map>
-#include<algorithm>
 #include<QString>
+#include<QJsonObject>
+#include<queue>
+#include <QDateTime>
+
+
+struct History
+{
+    History() {date = QDateTime::currentDateTime();}
+
+    QDateTime date;
+    QString opponent;
+    QString result;
+    QString rounds[3];
+
+};
 
 class User
 {
@@ -30,11 +42,15 @@ public:
     void setPassword(const QString &newPassword);
 
     bool operator==(const User&);
+    std::queue<History> getHistory() const;
+    void setHistory(const std::queue<History> &newHistory);
+
 private:
     QString firstName,lastName;
     int phoneNum;
     QString eMail;
     QString userName,password;
+    std::queue<History> history;
 
 };
 
