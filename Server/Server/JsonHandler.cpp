@@ -3,10 +3,14 @@
 JsonHandler::JsonHandler(QObject* parent)
     : QObject(parent),dataBase{new Users()}
 {
-    connect(&_loginHandler,&LoginCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
     connect(&_registerHandler,&RegisterCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
     connect(&_registerHandler,&RegisterCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+
     connect(&_loginHandler,&LoginCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+    connect(&_loginHandler,&LoginCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
+
+    connect(&_historyHandler,&GetHistoryCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+    connect(&_historyHandler,&GetHistoryCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
 
 }
 
@@ -24,6 +28,10 @@ void JsonHandler::Commands(const QJsonObject& obj)
     else if(cmd == "REGISTER"){
         _registerHandler[dataBase];
         _registerHandler(obj);
+    }
+    else if(cmd == "GET_HISTORY"){
+        _historyHandler[dataBase];
+        _historyHandler(obj);
     }
 
 

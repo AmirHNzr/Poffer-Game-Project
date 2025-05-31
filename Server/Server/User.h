@@ -14,7 +14,9 @@ struct History
     QString opponent;
     QString result;
     QString rounds[3];
-
+    bool operator>(const History& lhs){
+        return date > lhs.date;
+    }
 };
 
 class User

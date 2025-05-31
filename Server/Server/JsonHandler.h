@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include"LoginCommand.h"
 #include"RegisterCommand.h"
+#include"GetHistoryCommand.h"
 #include"Users.h"
 
 
@@ -23,6 +24,7 @@ private:
     QJsonParseError _parseError;
     LoginCommand _loginHandler;
     RegisterCommand _registerHandler;
+    GetHistoryCommand _historyHandler;
     Users* dataBase;
 signals:
     void ValidationFailed(const QJsonObject& errorPayload);

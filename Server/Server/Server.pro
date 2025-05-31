@@ -9,6 +9,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    GetHistoryCommand.cpp \
     JsonHandler.cpp \
     LoginCommand.cpp \
     RegisterCommand.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    GetHistoryCommand.h \
     ICommand.h \
     JsonHandler.h \
     LoginCommand.h \
