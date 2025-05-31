@@ -17,6 +17,6 @@ struct History
     }
 };
 
-std::vector<History> hist;
+extern std::vector<History> hist;
 
 #endif // HISTORY_H

@@ -4,7 +4,6 @@
 #include <QDialog>
 #include"UserController.h"
 #include"PlayerInfo.h"
-#include"History.h"
 namespace Ui {
 class UserPage;
 }
