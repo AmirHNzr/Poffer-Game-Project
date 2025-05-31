@@ -11,10 +11,10 @@ ServerHandler::ServerHandler(QObject *parent,int port)
     connect(_server,&QTcpServer::newConnection,this,&ServerHandler::OnNewConnection);
 
     //If login failed, send an error json
-    connect(&_jsonHandler,&JsonHandler::LogValidationFailed,this,&ServerHandler::OnSendError);
+    connect(&_jsonHandler,&JsonHandler::ValidationFailed,this,&ServerHandler::OnSendError);
 
     // Handling when registeration succeed
-    connect(&_jsonHandler,&JsonHandler::ValidRegister,this,&ServerHandler::OnSendError);
+    connect(&_jsonHandler,&JsonHandler::ValidationSuccessful,this,&ServerHandler::OnSendError);
 
 
     //Start listening and reserving port 12345 for any client

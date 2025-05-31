@@ -25,8 +25,8 @@ private:
     RegisterCommand _registerHandler;
     Users* dataBase;
 signals:
-    void LogValidationFailed(const QJsonObject& errorPayload);
-    void ValidRegister(const QJsonObject& successPayload);
+    void ValidationFailed(const QJsonObject& errorPayload);
+    void ValidationSuccessful(const QJsonObject& successPayload);
 
 
 

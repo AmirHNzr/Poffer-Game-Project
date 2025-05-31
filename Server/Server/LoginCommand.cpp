@@ -4,7 +4,10 @@
 
 void LoginCommand::Execute(const QJsonObject &payload)
 {
-    return;
+    QJsonObject err;
+    err["cmd"]   = "LOGIN_SUCCESS";
+    err["error"] = "Welcome " + payload.value("username").toString() +"!" ;
+    emit ExecuteSuccessfully(err);
 }
 
 bool LoginCommand::Validate(const QJsonObject &payload)

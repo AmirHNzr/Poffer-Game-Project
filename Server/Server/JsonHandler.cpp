@@ -3,9 +3,11 @@
 JsonHandler::JsonHandler(QObject* parent)
     : QObject(parent),dataBase{new Users()}
 {
-    connect(&_loginHandler,&LoginCommand::ValidationFailed,this,&JsonHandler::LogValidationFailed);
-    connect(&_registerHandler,&RegisterCommand::ValidationFailed,this,&JsonHandler::LogValidationFailed);
-    connect(&_registerHandler,&RegisterCommand::ExecuteSuccessfully,this,&JsonHandler::ValidRegister);
+    connect(&_loginHandler,&LoginCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
+    connect(&_registerHandler,&RegisterCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
+    connect(&_registerHandler,&RegisterCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+    connect(&_loginHandler,&LoginCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+
 }
 
 

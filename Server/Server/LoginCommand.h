@@ -21,6 +21,8 @@ private:
     Users* data;
 signals:
     void ValidationFailed(const QJsonObject& errorPayload);
+    void ExecuteSuccessfully(const QJsonObject& successPayload);
+
 
 };
 
