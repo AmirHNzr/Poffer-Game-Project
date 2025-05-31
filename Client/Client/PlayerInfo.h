@@ -3,7 +3,6 @@
 
 #include <QObject>
 
-
 class PlayerInfo : public QObject
 {
     Q_OBJECT
@@ -12,6 +11,8 @@ public:
 
     QString username() const;
     void setUsername(const QString &newUsername);
+
+    void JsonToHistory(const QJsonObject& obj);
 
 signals:
 

@@ -8,6 +8,11 @@ UserPage::UserPage(UserController* control,PlayerInfo* p,QWidget *parent)
     ui->setupUi(this);
     _controller = control;
     _player = p;
+
+    connect(ui->btnHistory, &QPushButton::clicked, this, [=]() {
+        QString user = _player->username();
+        _controller->GetHistory(user);
+    });
 }
 
 UserPage::~UserPage()
@@ -26,4 +31,10 @@ void UserPage::on_btnExit_clicked()
     this->close();
 }
 
+
+
+void UserPage::on_btnHistory_clicked()
+{
+
+}
 

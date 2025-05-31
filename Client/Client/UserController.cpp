@@ -99,6 +99,21 @@ void UserController::loginUser(const QString &username, const QString &password)
     }
 }
 
+void UserController::GetHistory(const QString &username)
+{
+    if(_socket.isOpen()){
+        //Creating a json file to make clear the command and files
+        QJsonObject req {
+            { "cmd",      "GET_HISTORY"        },
+            { "username", username          }
+        };
+        sendJson(req);
+    }
+    else{
+        QMessageBox::warning(nullptr,"Connection Error","You are not connected to the server");
+    }
+}
+
 void UserController::socket_stateChanged(QAbstractSocket::SocketState state)
 {
     if (state == QAbstractSocket::UnconnectedState) {

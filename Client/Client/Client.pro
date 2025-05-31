@@ -17,6 +17,7 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    History.h \
     JsonHandler.h \
     PlayerInfo.h \
     UserController.h \

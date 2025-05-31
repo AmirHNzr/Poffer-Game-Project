@@ -4,6 +4,7 @@
 #include <QDialog>
 #include"UserController.h"
 #include"PlayerInfo.h"
+#include"History.h"
 namespace Ui {
 class UserPage;
 }
@@ -20,6 +21,8 @@ protected:
     void showEvent(QShowEvent *event) override;
 private slots:
     void on_btnExit_clicked();
+
+    void on_btnHistory_clicked();
 
 private:
     Ui::UserPage *ui;

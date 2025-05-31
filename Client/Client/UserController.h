@@ -30,6 +30,8 @@ public slots:
                       const QString &username, const QString &password);
 
     void loginUser(const QString &username, const QString &password);
+
+    void GetHistory(const QString &username);
 signals:
     void connected();
     void disconnected();
