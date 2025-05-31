@@ -1,7 +1,7 @@
 #include "PlayerInfo.h"
 
 PlayerInfo::PlayerInfo(QObject *parent)
-    : QObject{parent}
+    : QObject{parent},_username{""}
 {}
 
 QString PlayerInfo::username() const

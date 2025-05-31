@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QJsonArray>
 #include"History.h"
+#include<QDebug>
 class JsonHandler : public QObject
 {
     Q_OBJECT

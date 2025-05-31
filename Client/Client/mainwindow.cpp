@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
     _controller = new UserController(this);
     _player = new PlayerInfo(this);
     //Setting up user page/menu
-    _userPage = new UserPage(_controller,_player,this);
+    _userPage = new UserPage(_controller,_player);
 
     ui->setupUi(this);
     //Setting connection up
@@ -44,7 +44,9 @@ void MainWindow::SetupConnection()
             _player->setUsername(ui->lnUsernameLog->text());
             _userPage->open();});
 
-    connect(_userPage,&QDialog::finished,this,&MainWindow::show);
+    connect(_userPage,&QDialog::finished,this,[this](int) {
+                this->show();
+            });
 }
 
 void MainWindow::on_lnIP_textChanged(const QString &arg1)

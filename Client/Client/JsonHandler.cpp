@@ -19,12 +19,13 @@ void JsonHandler::JsonReceived(QJsonDocument doc)
         QMessageBox::warning(nullptr,"Register error",obj["error"].toString());
     else if(cmd == "REGISTER_SUCCESS")
         QMessageBox::information(nullptr,"Register Complete",obj["error"].toString());
+
     else if(cmd == "GET_HISTORY_FAILED")
         QMessageBox::warning(nullptr,"Register error",obj["error"].toString());
     else if(cmd == "GET_HISTORY_SUCCESS"){
         QMessageBox::information(nullptr,"Register Complete",obj["error"].toString());
         QJsonArray arr = obj["history"].toArray();
-        for (int i = 0; i < arr.size(); ++i) {
+        for (int i = 0; i < arr.size() && !arr.empty(); ++i) {
             QJsonObject e = arr[i].toObject();
             QDateTime    d     = QDateTime::fromString(e["date"].toString(), Qt::ISODate);
             QString  opp   = e["opponent"].toString();
@@ -32,6 +33,7 @@ void JsonHandler::JsonReceived(QJsonDocument doc)
             QString  rnds  = e["rounds"].toString();
             hist.push_back(History(d,opp,res,rnds));
         }
+
     }
 
 
