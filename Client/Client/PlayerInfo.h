@@ -10,6 +10,9 @@ class PlayerInfo : public QObject
 public:
     explicit PlayerInfo(QObject *parent = nullptr);
 
+    QString username() const;
+    void setUsername(const QString &newUsername);
+
 signals:
 
 private:

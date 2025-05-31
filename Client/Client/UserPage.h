@@ -16,6 +16,8 @@ public:
     explicit UserPage(UserController*,PlayerInfo*,QWidget *parent = nullptr);
     ~UserPage();
 
+protected:
+    void showEvent(QShowEvent *event) override;
 private slots:
     void on_btnExit_clicked();
 

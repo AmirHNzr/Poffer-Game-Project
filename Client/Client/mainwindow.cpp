@@ -38,9 +38,11 @@ void MainWindow::SetupConnection()
     connect(_controller, &UserController::disconnected, this, &MainWindow::UserDisconnected);
     connect(_controller, &UserController::stateChanged, this, &MainWindow::UserStateChanged);
     connect(_controller, &UserController::errorOccurred, this, &MainWindow::UserErrorOccurred);
-    connect(_controller, &UserController::OnSuccessfulLogin, this, [&](){permission = true;
-                                                                         hide();
-                                                                         _userPage->open();});
+    connect(_controller, &UserController::OnSuccessfulLogin,this,
+            [&](){permission = true;
+            hide();
+            _player->setUsername(ui->lnUsernameLog->text());
+            _userPage->open();});
 
     connect(_userPage,&QDialog::finished,this,&MainWindow::show);
 }

@@ -15,8 +15,15 @@ UserPage::~UserPage()
     delete ui;
 }
 
+void UserPage::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+
+}
+
 void UserPage::on_btnExit_clicked()
 {
     this->close();
 }
+
 
