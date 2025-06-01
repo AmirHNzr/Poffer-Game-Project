@@ -35,8 +35,16 @@ void JsonHandler::JsonReceived(QJsonDocument doc)
             QString  rnds  = e["rounds"].toString();
             hist.push_back(History(d,opp,res,rnds));
         }
-
     }
+
+    else if(cmd == "EDIT_FAILED"){
+        QMessageBox::warning(nullptr,"Edit error",obj["error"].toString());
+        }
+    else if(cmd == "EDIT_SUCCESS"){
+        QMessageBox::information(nullptr,"Edit Complete",obj["error"].toString());
+            emit editPermission();}
 
 
 }
+
+

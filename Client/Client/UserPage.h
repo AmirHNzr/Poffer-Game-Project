@@ -4,6 +4,7 @@
 #include <QDialog>
 #include"UserController.h"
 #include"PlayerInfo.h"
+#include"editprofile.h"
 namespace Ui {
 class UserPage;
 }
@@ -21,14 +22,13 @@ protected:
 private slots:
     void on_btnExit_clicked();
 
-    void on_btnHistory_clicked();
-
     void on_btnEdit_clicked();
 
 private:
     Ui::UserPage *ui;
     UserController* _controller;
     PlayerInfo* _player;
+    EditProfile* _edit;
 };
 
 #endif // USERPAGE_H

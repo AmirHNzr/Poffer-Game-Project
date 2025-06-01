@@ -11,6 +11,7 @@ UserController::UserController(QObject *parent)
     connect(&_socket, &QTcpSocket::readyRead,this,&UserController::OnReadyRead);
     connect(this,&UserController::jsonReceived,&_jsonHandler, &JsonHandler::JsonReceived);
     connect(&_jsonHandler,&JsonHandler::OnSuccessfulLogin,this, &UserController::OnSuccessfulLogin);
+    connect(&_jsonHandler,&JsonHandler::editPermission,this, &UserController::EditPermission);
 
 
 
@@ -50,6 +51,7 @@ void UserController::sendJson(const QJsonObject &obj)
     _socket.write(bytes);
 
 }
+
 
 void UserController::registerUser(const QString &firstname,const QString &lastname,const QString &number,const QString &email,
                                   const QString &username, const QString &password)
@@ -114,13 +116,23 @@ void UserController::GetHistory(const QString &username)
     }
 }
 
-void UserController::EditProfile(const QString& username)
+void UserController::EditProfile(const QString& username,const QString &firstname,const QString &lastname,const QString &number,const QString &email,
+                                 const QString &username2, const QString &password)
 {
+    QByteArray passByte = password.toUtf8();
+    QByteArray hashBytes = QCryptographicHash::hash(passByte,QCryptographicHash::Sha256);
+    QString passBase64 = hashBytes.toBase64();
     if(_socket.isOpen()){
         //Creating a json file to make clear the command and files
         QJsonObject req {
             { "cmd",      "EDIT_PROFILE"        },
-            { "username", username          }
+            { "first_username", username          },
+            { "firstname",firstname         },
+            { "lastname", lastname          },
+            { "number",   number            },
+            { "email",    email             },
+            { "second_username", username2          },
+            { "password", passBase64        }
         };
         sendJson(req);
     }
@@ -149,3 +161,6 @@ void UserController::OnReadyRead()
         _buffer.clear();
     }
 }
+
+
+

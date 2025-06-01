@@ -16,8 +16,10 @@ public:
 
 signals:
     void OnSuccessfulLogin();
+    void editPermission();
 public slots:
     void JsonReceived(QJsonDocument);
+private:
 };
 
 #endif // JSONHANDLER_H

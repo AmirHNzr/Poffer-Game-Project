@@ -14,6 +14,7 @@ SOURCES += \
     PlayerInfo.cpp \
     UserController.cpp \
     UserPage.cpp \
+    editprofile.cpp \
     main.cpp \
     mainwindow.cpp
 
@@ -23,10 +24,12 @@ HEADERS += \
     PlayerInfo.h \
     UserController.h \
     UserPage.h \
+    editprofile.h \
     mainwindow.h
 
 FORMS += \
     UserPage.ui \
+    editprofile.ui \
     mainwindow.ui
 
 # Default rules for deployment.
