@@ -17,7 +17,7 @@ void EditCommand::Execute(const QJsonObject &payload)
     if(isAdded){
         QJsonObject err;
         err["cmd"]   = "EDIT_SUCCESS";
-        err["error"] = "You Registered Successfully";
+        err["error"] = "Edited Successfully";
         emit ExecuteSuccessfully(err);
     }
     else{
@@ -31,10 +31,13 @@ void EditCommand::Execute(const QJsonObject &payload)
 
 bool EditCommand::Validate(const QJsonObject &payload)
 {
-    QString username = payload.value("second_username").toString();
-    if(data->getData()->find(username) != data->getData()->end())
-        return false;
-    return true;
+    QString fisr_username = payload.value("first_username").toString();
+    QString sec_username = payload.value("second_username").toString();
+    if(fisr_username == sec_username)
+        return true;
+    if(data->getData()->find(sec_username) == data->getData()->end())
+        return true;
+    return false;
 
 }
 
