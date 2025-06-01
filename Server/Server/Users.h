@@ -10,7 +10,7 @@ public:
     Users();
     ~Users();
     bool AddUser(const User&);
-    bool EditUser(User);
+    bool EditUser(QString,User);
     QHash<QString, User>* getData() ;
 
 private:

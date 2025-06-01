@@ -8,6 +8,7 @@
 #include"LoginCommand.h"
 #include"RegisterCommand.h"
 #include"GetHistoryCommand.h"
+#include"EditCommand.h"
 #include"Users.h"
 
 
@@ -25,6 +26,7 @@ private:
     LoginCommand _loginHandler;
     RegisterCommand _registerHandler;
     GetHistoryCommand _historyHandler;
+    EditCommand _editHandler;
     Users* dataBase;
 signals:
     void ValidationFailed(const QJsonObject& errorPayload);

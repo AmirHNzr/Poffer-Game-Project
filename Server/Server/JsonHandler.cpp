@@ -12,6 +12,9 @@ JsonHandler::JsonHandler(QObject* parent)
     connect(&_historyHandler,&GetHistoryCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
     connect(&_historyHandler,&GetHistoryCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
 
+    connect(&_editHandler,&EditCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+    connect(&_editHandler,&EditCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
+
 }
 
 
@@ -32,6 +35,10 @@ void JsonHandler::Commands(const QJsonObject& obj)
     else if(cmd == "GET_HISTORY"){
         _historyHandler[dataBase];
         _historyHandler(obj);
+    }
+    else if(cmd == "EDIT_PROFILE"){
+        _editHandler[dataBase];
+        _editHandler(obj);
     }
 
 

@@ -12,6 +12,20 @@ bool Users::AddUser(const User& u)
     return true;
 }
 
+bool Users::EditUser(QString username,User newData)
+{
+    auto itr = data.find(newData.getUserName());
+    if(itr == data.end()){
+        data.insert(newData.getUserName(),newData);
+        data.remove(username);
+        return true;
+    }
+    else{
+
+        return false;
+    }
+}
+
 QHash<QString, User> *Users::getData()
 {
     return &data;
