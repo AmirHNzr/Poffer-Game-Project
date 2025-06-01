@@ -114,6 +114,21 @@ void UserController::GetHistory(const QString &username)
     }
 }
 
+void UserController::EditProfile(const QString& username)
+{
+    if(_socket.isOpen()){
+        //Creating a json file to make clear the command and files
+        QJsonObject req {
+            { "cmd",      "EDIT_PROFILE"        },
+            { "username", username          }
+        };
+        sendJson(req);
+    }
+    else{
+        QMessageBox::warning(nullptr,"Connection Error","You are not connected to the server");
+    }
+}
+
 void UserController::socket_stateChanged(QAbstractSocket::SocketState state)
 {
     if (state == QAbstractSocket::UnconnectedState) {

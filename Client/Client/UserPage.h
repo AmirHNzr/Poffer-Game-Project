@@ -23,6 +23,8 @@ private slots:
 
     void on_btnHistory_clicked();
 
+    void on_btnEdit_clicked();
+
 private:
     Ui::UserPage *ui;
     UserController* _controller;

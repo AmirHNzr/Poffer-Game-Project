@@ -9,10 +9,16 @@ UserPage::UserPage(UserController* control,PlayerInfo* p,QWidget *parent)
     _controller = control;
     _player = p;
 
-    connect(ui->btnHistory, &QPushButton::clicked, this, [=]() {
-        QString user = _player->username();
-        _controller->GetHistory(user);
-    });
+    connect(ui->btnHistory, &QPushButton::clicked,
+                            this, [=]() {
+                            QString user = _player->username();
+                            _controller->GetHistory(user);
+                            });
+
+    connect(ui->btnEdit, &QPushButton::clicked,this,[=]() {
+                            QString user = _player->username();
+                            _controller->EditProfile(user);
+                            });
 }
 
 UserPage::~UserPage()
@@ -33,7 +39,7 @@ void UserPage::on_btnExit_clicked()
 
 
 
-void UserPage::on_btnHistory_clicked()
+void UserPage::on_btnEdit_clicked()
 {
 
 }
