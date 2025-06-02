@@ -33,3 +33,9 @@ EditProfile::~EditProfile()
 
 
 
+
+void EditProfile::on_btnExit_clicked()
+{
+    close();
+}
+

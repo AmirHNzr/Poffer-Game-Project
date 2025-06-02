@@ -12,6 +12,10 @@ UserController::UserController(QObject *parent)
     connect(this,&UserController::jsonReceived,&_jsonHandler, &JsonHandler::JsonReceived);
     connect(&_jsonHandler,&JsonHandler::OnSuccessfulLogin,this, &UserController::OnSuccessfulLogin);
     connect(&_jsonHandler,&JsonHandler::editPermission,this, &UserController::EditPermission);
+    connect(&_jsonHandler, &JsonHandler::GameReady,
+            this, [&](const QJsonObject &gameInfo){
+                emit GameReady(gameInfo);
+            });
 
 
 

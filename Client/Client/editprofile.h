@@ -18,6 +18,8 @@ public:
 
 private slots:
 
+    void on_btnExit_clicked();
+
 private:
     Ui::EditProfile *ui;
     UserController* _controller;

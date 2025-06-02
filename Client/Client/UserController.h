@@ -47,6 +47,9 @@ signals:
     void OnSuccessfulLogin();
     void EditPermission();
 
+    void GameReady(const QJsonObject &gameInfo);
+
+
 
 
 private slots:

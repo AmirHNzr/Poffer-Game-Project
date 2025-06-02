@@ -17,6 +17,8 @@ public:
 signals:
     void OnSuccessfulLogin();
     void editPermission();
+    void GameReady(const QJsonObject &gameInfo);
+
 public slots:
     void JsonReceived(QJsonDocument);
 private:

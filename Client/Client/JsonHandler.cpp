@@ -44,6 +44,10 @@ void JsonHandler::JsonReceived(QJsonDocument doc)
         QMessageBox::information(nullptr,"Edit Complete",obj["error"].toString());
             emit editPermission();}
 
+    else if(cmd =="GAME_READY"){
+            emit GameReady(obj);
+        }
+
 
 }
 

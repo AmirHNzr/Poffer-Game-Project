@@ -5,6 +5,7 @@
 #include"UserController.h"
 #include"PlayerInfo.h"
 #include"editprofile.h"
+#include"GamePage.h"
 namespace Ui {
 class UserPage;
 }
@@ -23,6 +24,10 @@ private slots:
     void on_btnExit_clicked();
 
     void on_btnEdit_clicked();
+
+    void on_btnStart_clicked();
+
+    void onGameReady(const QJsonObject &gameInfo);
 
 private:
     Ui::UserPage *ui;

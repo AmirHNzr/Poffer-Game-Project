@@ -16,6 +16,8 @@ UserPage::UserPage(UserController* control,PlayerInfo* p,QWidget *parent)
                             _controller->GetHistory(user);
                             });
 
+    connect(_controller, &UserController::GameReady,this, &UserPage::onGameReady);
+
 }
 
 UserPage::~UserPage()
@@ -39,5 +41,40 @@ void UserPage::on_btnExit_clicked()
 void UserPage::on_btnEdit_clicked()
 {
     _edit->show();
+}
+
+
+void UserPage::on_btnStart_clicked()
+{
+    if (!_controller->isConnected()) {
+        QMessageBox::warning(this, "Connection Error", "Not connected to server.");
+        return;
+    }
+
+    //a JSON object that tells the server “I want to join the queue.”
+    QJsonObject request;
+    request["cmd"]      = "JOIN_QUEUE";
+    request["username"] = _player->username();
+
+    _controller->sendJson(request);
+
+    // Disable the button. change its text to “Waiting…”
+    ui->btnStart->setEnabled(false);
+    ui->btnStart->setText("Waiting for players...");
+}
+
+void UserPage::onGameReady(const QJsonObject &gameInfo)
+{
+    QJsonArray players = gameInfo["players"].toArray();
+
+    QMessageBox::information(this,
+                             "Game Ready!",
+                             QString("Enough players joined. Starting game now."));
+
+    // Instantiate GamePage
+    // Pass: player info, opponent, etc.
+    GamePage *gp = new GamePage(_player, players, this);
+    gp->show();
+    this->hide();
 }
 
