@@ -15,10 +15,11 @@ JsonHandler::JsonHandler(QObject* parent)
     connect(&_editHandler,&EditCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
     connect(&_editHandler,&EditCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
 
+    gm = new GameManager();
 }
 
 
-void JsonHandler::Commands(const QJsonObject& obj)
+void JsonHandler::Commands(const QJsonObject& obj,QTcpSocket* _current)
 {
     auto cmd = obj.value("cmd").toString().toUpper();
 
@@ -40,7 +41,9 @@ void JsonHandler::Commands(const QJsonObject& obj)
         _editHandler[dataBase];
         _editHandler(obj);
     }
-
+    else if(cmd == "JOIN_QUEUE"){
+        gm->enqueuePlayer(obj.value("username").toString(),_current);
+    }
 
 }
 

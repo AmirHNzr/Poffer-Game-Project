@@ -23,6 +23,7 @@ ServerHandler::ServerHandler(QObject *parent,int port)
     //Handling close ports
     if(!isOn)
         QMessageBox::warning(nullptr,"Port issue","It seems this port is reserved");
+
 }
 
 void ServerHandler::OnNewConnection()
@@ -69,7 +70,7 @@ void ServerHandler::OnReadyRead()
 
     QByteArray raw = sock->readAll();
     receivedData = _jsonHandler.BytesToJson(raw);
-    _jsonHandler.Commands(receivedData);
+    _jsonHandler.Commands(receivedData,_currentSocket);
 
 }
 

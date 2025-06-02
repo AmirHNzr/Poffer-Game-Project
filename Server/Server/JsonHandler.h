@@ -9,6 +9,7 @@
 #include"RegisterCommand.h"
 #include"GetHistoryCommand.h"
 #include"EditCommand.h"
+#include"GameManager.h"
 #include"Users.h"
 
 
@@ -18,7 +19,7 @@ class JsonHandler : public QObject
 public:
     explicit JsonHandler(QObject* parent = nullptr);
 
-    void Commands(const QJsonObject&);
+    void Commands(const QJsonObject&,QTcpSocket* _current=nullptr);
     QJsonObject BytesToJson(const QByteArray&);
 
 private:
@@ -27,6 +28,8 @@ private:
     RegisterCommand _registerHandler;
     GetHistoryCommand _historyHandler;
     EditCommand _editHandler;
+    GameManager* gm;
+
     Users* dataBase;
 signals:
     void ValidationFailed(const QJsonObject& errorPayload);
