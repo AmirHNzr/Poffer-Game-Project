@@ -9,9 +9,12 @@ UserController::UserController(QObject *parent)
     connect(&_socket,&QTcpSocket::stateChanged,this,&UserController::socket_stateChanged);
     connect(&_socket,&QTcpSocket::errorOccurred,this,&UserController::errorOccurred);
     connect(&_socket, &QTcpSocket::readyRead,this,&UserController::OnReadyRead);
+    //json file received
     connect(this,&UserController::jsonReceived,&_jsonHandler, &JsonHandler::JsonReceived);
     connect(&_jsonHandler,&JsonHandler::OnSuccessfulLogin,this, &UserController::OnSuccessfulLogin);
+    //Edit was successful
     connect(&_jsonHandler,&JsonHandler::editPermission,this, &UserController::EditPermission);
+    //Going out of waiting room and start playing
     connect(&_jsonHandler, &JsonHandler::GameReady,
             this, [&](const QJsonObject &gameInfo){
                 emit GameReady(gameInfo);
