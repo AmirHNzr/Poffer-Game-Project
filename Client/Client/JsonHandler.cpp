@@ -48,7 +48,6 @@ void JsonHandler::JsonReceived(QJsonDocument doc)
             emit GameReady(obj);
         }
 
-
 }
 
 

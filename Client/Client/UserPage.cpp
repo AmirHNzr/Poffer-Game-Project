@@ -73,7 +73,7 @@ void UserPage::onGameReady(const QJsonObject &gameInfo)
 
     // Instantiate GamePage
     // Pass: player info, opponent, etc.
-    GamePage *gp = new GamePage(_player, players, this);
+    GamePage *gp = new GamePage(_controller,_player, players, this);
     gp->show();
     this->hide();
 }
