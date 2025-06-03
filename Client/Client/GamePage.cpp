@@ -45,7 +45,7 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
         decodeCardIndex(n, suitIdx, rankIdx);
 
         // Build a resource path like ":/cards/Coin-2.JPG"
-        QString path = QString(":/cards/%2-%1.JPG")
+        QString path = QString(":/images/Images/%2-%1.JPG")
                            .arg(RANK_NAMES[rankIdx])
                            .arg(SUIT_NAMES[suitIdx]);
 
