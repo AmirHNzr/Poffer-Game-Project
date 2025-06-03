@@ -28,8 +28,10 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
     , _player(p)
     , _players(ps)
     , _controller(c)
+    , _scene(new QGraphicsScene(this))
 {
     ui->setupUi(this);
+    ui->graphicsView->setScene(_scene);
 
 
     if (!m_backPixmap.load(":/cards/back.png")) {
@@ -66,6 +68,33 @@ GamePage::~GamePage()
         delete item;
     }
     m_visibleCards.clear();
+}
+
+void GamePage::ShowCards()
+{
+    int i =0;
+    for(auto& card:m_visibleCards){
+        connect(card, &CardItem::clicked, this, &GamePage::onCardClicked);
+        connect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+        card->setPos(i,0);
+        _scene->addItem(card);
+        i+=1000;
+    }
+}
+
+void GamePage::onCardClicked(CardItem *card)
+{
+
+}
+
+void GamePage::CardSelected(CardItem *card)
+{
+
+}
+
+void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos)
+{
+
 }
 
 void GamePage::SessionOrders(const QJsonDocument &doc)

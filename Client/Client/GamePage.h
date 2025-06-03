@@ -37,9 +37,12 @@ private:
     //keep pointers of dealt card (one for each visible CardItem)
     std::vector<CardItem*> m_visibleCards;
 
-    QGraphicsView*  m_view;
+    QGraphicsScene *_scene;
+
+
+    void ShowCards();
 protected:
-    void resizeEvent(QResizeEvent *event) override;
+    //void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     //Slot when any CardItem is clicked
