@@ -17,6 +17,7 @@ void GameSession::operator()(const QJsonObject &obj)
     auto cmd = obj.value("cmd").toString();
 
     if(cmd == "GAME_STARTED"){
+        _sessionPlayers = _gm->sessionPlayers();
         _startedSessions++;
         if(_startedSessions == 2)
             StartGame();
@@ -48,7 +49,7 @@ void GameSession::ResetCards()
 
 void GameSession::StartGame()
 {
-    while(_gameRound <= 3){
+    while(_gameRound <= 1){
         /*
          * 1-Send random cards to choose first player
          * 2-Add first player and sec to QHash
@@ -65,6 +66,7 @@ void GameSession::StartGame()
          */
 
         PickFirstPlayer();
+        _gameRound++;
 
 
 
@@ -77,7 +79,7 @@ void GameSession::PickFirstPlayer()
 {
     std::mt19937 gen(rd());
 
-    std::shuffle(_cards.begin() +39 , _cards.end() +51 , gen);
+    std::shuffle(_cards.begin() +39 , _cards.end() , gen);
     int firstDiamond  = _cards[39];
     int secondDiamond = _cards[40];
 
@@ -85,31 +87,31 @@ void GameSession::PickFirstPlayer()
     obj["cmd"] = "PLAYERS_ORDER";
 
     if(firstDiamond > secondDiamond){
-        _playerOrder.insert(1,_sessionPlayers.at(1));
+        _playerOrder.insert(0,_sessionPlayers.at(0));
         obj["yours"] = firstDiamond;
         obj["opponents"] = secondDiamond;
         obj["result"] = "first";
-        SendData(obj,_sessionPlayers[1].socket);
+        SendData(obj,_sessionPlayers[0].socket);
 
-        _playerOrder.insert(2,_sessionPlayers.at(2));
+        _playerOrder.insert(1,_sessionPlayers.at(1));
         obj["yours"] = secondDiamond;
         obj["opponents"] = firstDiamond;
         obj["result"] = "second";
-        SendData(obj,_sessionPlayers[2].socket);
+        SendData(obj,_sessionPlayers[1].socket);
 
     }
     else{
-        _playerOrder.insert(1,_sessionPlayers.at(2));
+        _playerOrder.insert(0,_sessionPlayers.at(1));
         obj["yours"] = secondDiamond;
         obj["opponents"] = firstDiamond;
         obj["result"] = "first";
-        SendData(obj,_sessionPlayers[2].socket);
+        SendData(obj,_sessionPlayers[1].socket);
 
-        _playerOrder.insert(2,_sessionPlayers.at(1));
+        _playerOrder.insert(1,_sessionPlayers.at(0));
         obj["yours"] = firstDiamond;
         obj["opponents"] = secondDiamond;
         obj["result"] = "second";
-        SendData(obj,_sessionPlayers[1].socket);
+        SendData(obj,_sessionPlayers[0].socket);
     }
 
 

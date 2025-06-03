@@ -75,6 +75,7 @@ void ServerHandler::OnReadyRead()
     QByteArray raw = sock->readAll();
     receivedData = _jsonHandler->BytesToJson(raw);
     _jsonHandler->Commands(receivedData,_currentSocket);
+    (*_session)(receivedData);
 
 }
 
