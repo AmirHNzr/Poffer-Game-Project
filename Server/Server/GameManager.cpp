@@ -12,6 +12,11 @@ void GameManager::enqueuePlayer(const QString &username, QTcpSocket *sock)
     tryStartGame();
 }
 
+std::vector<QueueEntry> GameManager::sessionPlayers() const
+{
+    return _sessionPlayers;
+}
+
 void GameManager::tryStartGame()
 {
     if ((int)m_queue.size() < REQUIRED_PLAYERS)
@@ -32,6 +37,7 @@ void GameManager::tryStartGame()
 
     //Send “GAME_READY” to each socket:
     for (int i = 0; i < REQUIRED_PLAYERS; ++i) {
+        _sessionPlayers.push_back(m_queue[i]);
         QTcpSocket* s = m_queue[i].socket;
         if (s && s->state() == QAbstractSocket::ConnectedState) {
             s->write(bytes);

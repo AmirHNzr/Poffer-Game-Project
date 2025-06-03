@@ -7,6 +7,8 @@
 #include <QMessageBox>
 #include <QWidget>
 #include"JsonHandler.h"
+#include"GameManager.h"
+#include"GameSession.h"
 
 
 class ServerHandler : public QObject
@@ -36,9 +38,10 @@ private:
     QTcpSocket* _currentSocket = nullptr;
     QHash<qintptr, QTcpSocket*> clients;
     bool isOn;
-    JsonHandler _jsonHandler;
+    JsonHandler* _jsonHandler;
     QJsonObject receivedData;
-
+    GameManager* _gm;
+    GameSession* _session;
 };
 
 #endif // SERVERHANDLER_H

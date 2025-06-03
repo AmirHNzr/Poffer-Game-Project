@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     EditCommand.cpp \
     GameManager.cpp \
+    GameSession.cpp \
     GetHistoryCommand.cpp \
     JsonHandler.cpp \
     LoginCommand.cpp \
@@ -24,6 +25,7 @@ SOURCES += \
 HEADERS += \
     EditCommand.h \
     GameManager.h \
+    GameSession.h \
     GetHistoryCommand.h \
     ICommand.h \
     JsonHandler.h \

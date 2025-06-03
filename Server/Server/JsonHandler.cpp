@@ -1,7 +1,7 @@
 #include "JsonHandler.h"
 
-JsonHandler::JsonHandler(QObject* parent)
-    : QObject(parent),dataBase{new Users()}
+JsonHandler::JsonHandler(GameManager* gm,QObject* parent)
+    : QObject(parent),gm{gm},dataBase{new Users()}
 {
     connect(&_registerHandler,&RegisterCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
     connect(&_registerHandler,&RegisterCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
@@ -14,8 +14,6 @@ JsonHandler::JsonHandler(QObject* parent)
 
     connect(&_editHandler,&EditCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
     connect(&_editHandler,&EditCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
-
-    gm = new GameManager();
 }
 
 

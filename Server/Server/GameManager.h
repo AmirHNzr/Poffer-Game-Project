@@ -25,12 +25,15 @@ public:
 
 
 
+    std::vector<QueueEntry> sessionPlayers() const;
+
 signals:
     void queueUpdated(int count);
 
 
 private:
     std::vector<QueueEntry> m_queue;
+    std::vector<QueueEntry> _sessionPlayers;
     static constexpr int REQUIRED_PLAYERS = 2;
 
     void tryStartGame();

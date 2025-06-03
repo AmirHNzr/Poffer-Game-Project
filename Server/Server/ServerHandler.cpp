@@ -4,17 +4,21 @@ ServerHandler::ServerHandler(QObject *parent,int port)
     : QObject{parent}
 {
     _server = new QTcpServer(this);
+    _gm = new GameManager();
+    _jsonHandler = new JsonHandler(_gm);
+    _session = new GameSession(_gm);
     clients.reserve(16);
+
 
 
     //To handle new connections
     connect(_server,&QTcpServer::newConnection,this,&ServerHandler::OnNewConnection);
 
     //If login failed, send an error json
-    connect(&_jsonHandler,&JsonHandler::ValidationFailed,this,&ServerHandler::OnSendError);
+    connect(_jsonHandler,&JsonHandler::ValidationFailed,this,&ServerHandler::OnSendError);
 
     // Handling when registeration succeed
-    connect(&_jsonHandler,&JsonHandler::ValidationSuccessful,this,&ServerHandler::OnSendError);
+    connect(_jsonHandler,&JsonHandler::ValidationSuccessful,this,&ServerHandler::OnSendError);
 
 
     //Start listening and reserving port 12345 for any client
@@ -69,8 +73,8 @@ void ServerHandler::OnReadyRead()
     _currentSocket = sock;
 
     QByteArray raw = sock->readAll();
-    receivedData = _jsonHandler.BytesToJson(raw);
-    _jsonHandler.Commands(receivedData,_currentSocket);
+    receivedData = _jsonHandler->BytesToJson(raw);
+    _jsonHandler->Commands(receivedData,_currentSocket);
 
 }
 

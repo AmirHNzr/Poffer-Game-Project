@@ -17,7 +17,7 @@ class JsonHandler : public QObject
 {
     Q_OBJECT
 public:
-    explicit JsonHandler(QObject* parent = nullptr);
+    explicit JsonHandler(GameManager*,QObject* parent = nullptr);
 
     void Commands(const QJsonObject&,QTcpSocket* _current=nullptr);
     QJsonObject BytesToJson(const QByteArray&);
