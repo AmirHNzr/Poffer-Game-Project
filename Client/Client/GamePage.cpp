@@ -34,7 +34,7 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
     ui->graphicsView->setScene(_scene);
 
 
-    if (!m_backPixmap.load(":/cards/back.png")) {
+    if (!m_backPixmap.load(":/Images/cards/back.png")) {
         qWarning() << "Failed to load back.png";
     }
 
@@ -45,7 +45,7 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
         decodeCardIndex(n, suitIdx, rankIdx);
 
         // Build a resource path like ":/cards/Coin-2.JPG"
-        QString path = QString(":/images/Images/%2-%1.JPG")
+        QString path = QString(":/Images/cards/%2-%1.JPG")
                            .arg(RANK_NAMES[rankIdx])
                            .arg(SUIT_NAMES[suitIdx]);
 
@@ -82,19 +82,54 @@ void GamePage::ShowCards()
     }
 }
 
+void GamePage::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+
+    //we have to send an "GAME_STARTED" json;
+    QJsonObject obj;
+    obj["cmd"] = "GAME_STARTED";
+    _controller->sendJson(obj);
+
+}
+
 void GamePage::onCardClicked(CardItem *card)
 {
-
+    QPointF start = card->pos();
+    QPointF end = QPointF(start.x(), -50);
+    animateDeal(card, start, end);
 }
 
 void GamePage::CardSelected(CardItem *card)
 {
-
+    QPointF start = card->pos();
+    QPointF end = QPointF(start.x(), 500);
+    animateDeal(card, start, end);
 }
 
 void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos)
 {
+    QTimeLine *timeLine = new QTimeLine(250, this); //250 ms
+    timeLine->setFrameRange(0, 100);
 
+    QGraphicsItemAnimation *animation = new QGraphicsItemAnimation;
+    animation->setItem(card);
+    animation->setTimeLine(timeLine);
+
+    // Interpolate from startPos -> endPos over 0..100
+    for (int i = 0; i <= 100; ++i) {
+        qreal t = i / 100.0;
+        QPointF pos = startPos * (1.0 - t) + endPos * t;
+        animation->setPosAt(i / 100.0, pos);
+    }
+
+    connect(timeLine, &QTimeLine::finished, this,[timeLine, animation]() {
+        //Clean up when done
+        animation->deleteLater();
+        timeLine->deleteLater();
+    });
+
+    timeLine->start();
 }
 
 void GamePage::SessionOrders(const QJsonDocument &doc)
@@ -107,7 +142,27 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
     QJsonObject obj = doc.object();
     auto cmd = obj["cmd"].toString();
     CardItem* newCard = nullptr;
-    if(cmd == "PLAYER1_CARDS_SENT"){
+    if(cmd == "PLAYERS_ORDER"){
+        for(int i=1;i<=2;i++){
+            int yours = obj["yours"].toInt();
+            int opponents = obj["opponents"].toInt();
+            newCard = new CardItem(m_facePixmaps[yours],m_backPixmap);
+            m_visibleCards.push_back(newCard);
+            newCard = new CardItem(m_facePixmaps[opponents],m_backPixmap);
+            m_visibleCards.push_back(newCard);
+            ShowCards();
+
+            QPointF start = m_visibleCards[0]->pos();
+            QPointF end = QPointF(start.x(), 50000);
+            animateDeal(m_visibleCards[0], start, end);
+
+            start = m_visibleCards[1]->pos();
+            end = QPointF(start.x(), -50000);
+            animateDeal(m_visibleCards[1], start, end);
+
+        }
+    }
+    else if(cmd == "PLAYER1_CARDS_SENT"){
         for(int i=1;i<=7;i++){
             int n = obj[QString::number(i)].toInt();
             newCard = new CardItem(m_facePixmaps[n],m_backPixmap);
@@ -123,6 +178,7 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
             m_visibleCards.push_back(newCard);
         }
     }
+    //ShowCards();
 
 
 }

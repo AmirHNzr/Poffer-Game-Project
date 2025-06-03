@@ -8,6 +8,8 @@
 #include<QJsonArray>
 #include <QGraphicsView>
 #include"UserController.h"
+#include <QGraphicsItemAnimation>
+#include <QTimeLine>
 
 namespace Ui {
 class GamePage;
@@ -43,6 +45,8 @@ private:
     void ShowCards();
 protected:
     //void resizeEvent(QResizeEvent *event) override;
+    void showEvent(QShowEvent *event) override;
+
 
 private slots:
     //Slot when any CardItem is clicked

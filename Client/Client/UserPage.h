@@ -6,6 +6,7 @@
 #include"PlayerInfo.h"
 #include"editprofile.h"
 #include"GamePage.h"
+
 namespace Ui {
 class UserPage;
 }
