@@ -47,7 +47,7 @@ private:
     QGraphicsScene *_scene;
 
 
-    void ShowCards();
+    void ShowCards(int,int);
 
     //Show if they are first or not
     QLabel*   m_overlayLabel;

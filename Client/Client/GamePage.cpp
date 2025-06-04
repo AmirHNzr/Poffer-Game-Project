@@ -74,7 +74,7 @@ GamePage::~GamePage()
     m_visibleCards.clear();
 }
 
-void GamePage::ShowCards()
+void GamePage::ShowCards(int xOffset=100,int yOffset=150)
 {
     int x =0;
     int y=0;
@@ -84,8 +84,8 @@ void GamePage::ShowCards()
 
         card->setPos(x,y);
         _scene->addItem(card);
-        x+=100;
-        y-=150;
+        x+=xOffset;
+        y-=yOffset;
     }
 }
 
@@ -215,40 +215,34 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
     auto cmd = obj["cmd"].toString();
     CardItem* newCard = nullptr;
     if(cmd == "PLAYERS_ORDER"){
-        for(int i=1;i<=2;i++){
-            int yours = obj["yours"].toInt();
-            int opponents = obj["opponents"].toInt();
-            newCard = new CardItem(m_facePixmaps[yours],m_backPixmap);
-            m_visibleCards.push_back(newCard);
-            newCard = new CardItem(m_facePixmaps[opponents],m_backPixmap);
-            m_visibleCards.push_back(newCard);
-            ShowCards();
-            showFadingMessage("You are "+obj["result"].toString());
-            for(auto card:m_visibleCards)
-                animateDeal(card,card->pos(),QPointF(card->pos().x(),10000),5000);
 
-            return;
+        int yours = obj["yours"].toInt();
+        int opponents = obj["opponents"].toInt();
+        newCard = new CardItem(m_facePixmaps[yours],m_backPixmap);
+        m_visibleCards.push_back(newCard);
+        newCard = new CardItem(m_facePixmaps[opponents],m_backPixmap);
+        m_visibleCards.push_back(newCard);
+        ShowCards();
+        showFadingMessage("You are "+obj["result"].toString());
+        for(auto card:m_visibleCards)
+            animateDeal(card,card->pos(),QPointF(card->pos().x(),10000),5000);
 
+        return;
 
-
-        }
     }
-    else if(cmd == "PLAYER1_CARDS_SENT"){
-        for(int i=1;i<=7;i++){
-            int n = obj[QString::number(i)].toInt();
+    else if(cmd == "CARD_BATCH"){
+        for(int i=0;;i++){
+            QString key = QString::number(i);
+            if (!obj.contains(key))
+                break;
+            int n = obj[key].toInt();
             newCard = new CardItem(m_facePixmaps[n],m_backPixmap);
 
             m_visibleCards.push_back(newCard);
         }
+        ShowCards(50,0);
     }
-    else if(cmd == "PLAYER2_CARDS_SENT"){
-        for(int i=1;i<=6;i++){
-            int n = obj[QString::number(i)].toInt();
-            newCard = new CardItem(m_facePixmaps[n],m_backPixmap);
 
-            m_visibleCards.push_back(newCard);
-        }
-    }
     //ShowCards();
 
 
