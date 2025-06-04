@@ -17,6 +17,7 @@ SOURCES += \
     LoginCommand.cpp \
     RegisterCommand.cpp \
     ServerHandler.cpp \
+    TimerThread.cpp \
     User.cpp \
     Users.cpp \
     main.cpp \
@@ -32,6 +33,7 @@ HEADERS += \
     LoginCommand.h \
     RegisterCommand.h \
     ServerHandler.h \
+    TimerThread.h \
     User.h \
     Users.h \
     mainwindow.h

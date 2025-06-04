@@ -1,4 +1,5 @@
 #include "GameSession.h"
+#include "qeventloop.h"
 
 GameSession::GameSession(GameManager* gm,QObject *parent)
     : QObject{parent},_gm{gm}
@@ -6,6 +7,7 @@ GameSession::GameSession(GameManager* gm,QObject *parent)
     _sessionPlayers = _gm->sessionPlayers();
     _startedSessions = 0;
     _gameRound = 1;
+    _innerRound = 1;
 
     ResetCards();
 
@@ -22,20 +24,35 @@ void GameSession::operator()(const QJsonObject &obj)
         if(_startedSessions == 2)
             StartGame();
     }
+    // They have to send username and picked card in order to work correctly
+    else if(cmd == "PICKED"){
+        auto itr = std::find(_drawnCards.begin(),_drawnCards.end(),obj["card"].toInt());
+        if (itr == _drawnCards.end()) return;
+        _drawnCards.erase(itr);
+        _playersCards[obj["username"].toString()].push_back(obj["card"].toInt());
+        emit StopTimer();
+    }
 }
 
 void GameSession::SendData(QJsonObject &obj,QTcpSocket* _sock)
 {
     QJsonDocument doc(obj);
     QByteArray   bytes = doc.toJson(QJsonDocument::Compact);
-    auto cmd = obj.value("cmd").toString();
+    //auto cmd = obj.value("cmd").toString();
 
-    if(cmd == "PLAYERS_ORDER"){
+    /*if(cmd == "PLAYERS_ORDER"){
         if (_sock && _sock->state() == QAbstractSocket::ConnectedState) {
             _sock->write(bytes);
             _sock->flush();
         }
+        return;
+    }*/
+
+    if (_sock && _sock->state() == QAbstractSocket::ConnectedState) {
+        _sock->write(bytes);
+        _sock->flush();
     }
+
 
 }
 
@@ -66,6 +83,48 @@ void GameSession::StartGame()
          */
 
         PickFirstPlayer();
+        ResetCards();
+        _innerRound = 1;
+
+        while(_innerRound <=5){
+            DrawCards(7);
+            SendCards(_playerOrder[0].socket);
+
+            if(!Halt(_playerOrder[0].socket,20000)){
+                QJsonObject obj;
+                obj["cmd"] = "ALMOST_TIMEOUT";
+                SendData(obj,_playerOrder[0].socket);
+
+                if(!Halt(_playerOrder[0].socket,10000)){
+                    QJsonObject obj;
+                    obj["cmd"] = "TIMEOUT";
+                    SendData(obj,_playerOrder[0].socket);
+
+                    _playersCards[_playerOrder[0].username].push_back(_drawnCards.back());
+                    _drawnCards.pop_back();
+                }
+            }
+
+            SendCards(_playerOrder[1].socket);
+            if(!Halt(_playerOrder[1].socket,20000)){
+                QJsonObject obj;
+                obj["cmd"] = "ALMOST_TIMEOUT";
+                SendData(obj,_playerOrder[1].socket);
+
+                if(!Halt(_playerOrder[1].socket,10000)){
+                    QJsonObject obj;
+                    obj["cmd"] = "TIMEOUT";
+                    SendData(obj,_playerOrder[1].socket);
+
+                    _playersCards[_playerOrder[1].username].push_back(_drawnCards.back());
+                    _drawnCards.pop_back();
+                }
+            }
+            std::swap(_playerOrder[0],_playerOrder[1]);
+            DiscardCards();
+
+            _innerRound++;
+        }
         _gameRound++;
 
 
@@ -115,4 +174,62 @@ void GameSession::PickFirstPlayer()
     }
 
 
+}
+
+void GameSession::DrawCards(const int& num)
+{
+    std::mt19937 gen(rd());
+    std::shuffle(_cards.begin(),_cards.end(),gen);
+
+    for(int i=0;i<num;i++)
+        _drawnCards.push_back(_cards[i]);
+
+}
+
+void GameSession::SendCards(QTcpSocket* _sock)
+{
+    int i =0;
+    QJsonObject obj;
+    obj["cmd"] = "CARD_BATCH";
+    for(auto& card:_drawnCards){
+        obj[QString::number(i)] = card;
+        i++;
+    }
+    SendData(obj,_sock);
+}
+
+void GameSession::DiscardCards()
+{
+    std::unordered_set<int> removeSet(_drawnCards.begin(), _drawnCards.end());
+
+    auto newEnd = std::remove_if(
+        _cards.begin(),
+        _cards.end(),
+        [&](int x) { return removeSet.count(x) > 0; });
+
+    _cards.erase(newEnd, _cards.end());
+}
+
+bool GameSession::Halt(QTcpSocket* _sock,int halt)
+{
+    _timer = new TimerThread(halt, this);
+    QEventLoop    loop;
+    bool playerHasData = false;
+
+    QObject::connect(_timer,  &TimerThread::timeout, &loop, &QEventLoop::quit);
+    QObject::connect(this, &GameSession::StopTimer, &loop, &QEventLoop::quit);
+    QObject::connect(this, &GameSession::StopTimer, this, [&playerHasData](){playerHasData = true;});
+
+    _timer->start();
+    loop.exec();
+
+
+
+    if (_timer->isRunning()) {
+        _timer->quit();
+        _timer->wait();
+    }
+    delete _timer;
+
+    return playerHasData;
 }
