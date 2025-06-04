@@ -10,6 +10,11 @@
 #include"UserController.h"
 #include <QGraphicsItemAnimation>
 #include <QTimeLine>
+#include <QLabel>
+#include <QGraphicsOpacityEffect>
+#include <QPropertyAnimation>
+#include <QTimer>
+
 
 namespace Ui {
 class GamePage;
@@ -43,8 +48,17 @@ private:
 
 
     void ShowCards();
+
+    //Show if they are first or not
+    QLabel*   m_overlayLabel;
+    QGraphicsOpacityEffect* m_opacityEffect;
+    QPropertyAnimation*     m_fadeAnimation;
+    void SetupFadingMsg();
+    void showFadingMessage(const QString& text, int fadeInMs = 500, int stayMs = 1000, int fadeOutMs = 500);
+    //Fading animation
+
 protected:
-    //void resizeEvent(QResizeEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
 
 
@@ -56,7 +70,7 @@ private slots:
     void CardSelected(CardItem* card);
 
     //deal (move) a card from one point to another
-    void animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos);
+    void animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos,const int& time=250);
 
     void SessionOrders(const QJsonDocument&);
 };

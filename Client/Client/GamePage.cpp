@@ -32,12 +32,13 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
 {
     ui->setupUi(this);
     ui->graphicsView->setScene(_scene);
-
+    SetupFadingMsg();
 
     if (!m_backPixmap.load(":/Images/cards/back.png")) {
         qWarning() << "Failed to load back.png";
     }
 
+    QSize targetSize(100, 100);
     //Preload all 52 face‐side pixmaps into m_facePixmaps
     for (int i = 0; i < 52; ++i) {
         int n = i + 1;
@@ -53,12 +54,15 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
         if (!px.load(path)) {
             qWarning() << "Could not load card image at" << path;
         }
+        px = px.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
         m_facePixmaps[i] = px;
     }
 
     ui->graphicsView->setRenderHint(QPainter::Antialiasing);
 
     connect(_controller,&UserController::jsonReceived,this,&GamePage::SessionOrders);
+
+
 }
 
 GamePage::~GamePage()
@@ -72,14 +76,82 @@ GamePage::~GamePage()
 
 void GamePage::ShowCards()
 {
-    int i =0;
+    int x =0;
+    int y=0;
     for(auto& card:m_visibleCards){
         connect(card, &CardItem::clicked, this, &GamePage::onCardClicked);
         connect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
-        card->setPos(i,0);
+
+        card->setPos(x,y);
         _scene->addItem(card);
-        i+=1000;
+        x+=100;
+        y-=150;
     }
+}
+
+void GamePage::SetupFadingMsg()
+{
+    m_overlayLabel = new QLabel(this);
+    m_opacityEffect = new QGraphicsOpacityEffect(this);
+    m_fadeAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
+
+    m_overlayLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_overlayLabel->setAlignment(Qt::AlignCenter);
+    m_overlayLabel->setStyleSheet(R"(
+        background-color: rgba(0, 0, 0, 128); /* semi-transparent black */
+        color: white;
+        font: bold 36px;
+    )");
+    m_overlayLabel->setGraphicsEffect(m_opacityEffect);
+
+    // Make sure the label covers the entire client area:
+    m_overlayLabel->setGeometry(rect());
+    m_overlayLabel->hide();
+
+}
+
+void GamePage::showFadingMessage(const QString &text, int fadeInMs, int stayMs, int fadeOutMs)
+{
+    //Set the text:
+    m_overlayLabel->setText(text);
+    m_overlayLabel->raise();
+    m_overlayLabel->show();
+
+    //fade in 0 -> 1
+    m_fadeAnimation->stop();
+    m_fadeAnimation->setDuration(fadeInMs);
+    m_fadeAnimation->setStartValue(0.0);
+    m_fadeAnimation->setEndValue(1.0);
+
+    //After fade in, wait for stayMs, then fade out:
+    connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [=]() {
+        //halt for stayMs, then fade out:
+        QTimer::singleShot(stayMs, this, [=]() {
+            //fade 1 -> 0:
+            m_fadeAnimation->disconnect(); // disconnect old finished() slot
+            m_fadeAnimation->setDuration(fadeOutMs);
+            m_fadeAnimation->setStartValue(1.0);
+            m_fadeAnimation->setEndValue(0.0);
+
+            connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [=]() {
+                //after fade out, hide the label
+                m_overlayLabel->hide();
+                m_fadeAnimation->disconnect();
+            });
+            m_fadeAnimation->start();
+        });
+    });
+
+    m_fadeAnimation->start();
+}
+
+void GamePage::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+
+    //Resize sceneRect(0,0)→(viewportWidth, viewportHeight)
+    const QSize vp = ui->graphicsView->viewport()->size();
+    _scene->setSceneRect(0, 0, vp.width(), vp.height());
 }
 
 void GamePage::showEvent(QShowEvent *event)
@@ -107,9 +179,9 @@ void GamePage::CardSelected(CardItem *card)
     animateDeal(card, start, end);
 }
 
-void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos)
+void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos,const int& Time)
 {
-    QTimeLine *timeLine = new QTimeLine(250, this); //250 ms
+    QTimeLine *timeLine = new QTimeLine(Time, this); //250 ms
     timeLine->setFrameRange(0, 100);
 
     QGraphicsItemAnimation *animation = new QGraphicsItemAnimation;
@@ -151,14 +223,13 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
             newCard = new CardItem(m_facePixmaps[opponents],m_backPixmap);
             m_visibleCards.push_back(newCard);
             ShowCards();
+            showFadingMessage("You are "+obj["result"].toString());
+            for(auto card:m_visibleCards)
+                animateDeal(card,card->pos(),QPointF(card->pos().x(),10000),5000);
 
-            QPointF start = m_visibleCards[0]->pos();
-            QPointF end = QPointF(start.x(), 50000);
-            animateDeal(m_visibleCards[0], start, end);
+            return;
 
-            start = m_visibleCards[1]->pos();
-            end = QPointF(start.x(), -50000);
-            animateDeal(m_visibleCards[1], start, end);
+
 
         }
     }
