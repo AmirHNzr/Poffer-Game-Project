@@ -3,11 +3,10 @@
 ServerHandler::ServerHandler(QObject *parent,int port)
     : QObject{parent}
 {
-    _users = new Users();
     _server = new QTcpServer(this);
     _gm = new GameManager();
-    _jsonHandler = new JsonHandler(_gm,_users);
-    _session = new GameSession(_gm,_users);
+    _jsonHandler = new JsonHandler(_gm);
+    _session = new GameSession(_gm);
     clients.reserve(16);
 
 
@@ -45,10 +44,6 @@ void ServerHandler::OnNewConnection()
     connect(sock,&QTcpSocket::disconnected,this,&ServerHandler::OnClientDC);
     //Reading data from socket
     connect(sock, &QTcpSocket::readyRead,this, &ServerHandler::OnReadyRead);
-    qDebug() << "[ServerHandler]   Accepted new client from"
-             << sock->peerAddress().toString()
-             << ":"
-             << sock->peerPort();
     emit NewConnection();
 
 
@@ -69,72 +64,25 @@ void ServerHandler::OnClientDC(){
     emit NewDC();
 }
 
-// void ServerHandler::OnReadyRead()
-// {
-//     //Who is sending
-//     QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
-//     if (!sock) return;
-
-//     _currentSocket = sock;
-
-//     QByteArray raw = sock->readAll();
-//     qDebug() << "[ServerHandler] raw bytes received:" << raw;
-
-//     receivedData = _jsonHandler->BytesToJson(raw);
-//     _jsonHandler->Commands(receivedData,_currentSocket);
-//     qDebug() << "[ServerHandler] about to call GameSession with:" << receivedData;
-//     qDebug() << "[ServerHandler] socket" << sock->socketDescriptor();
-//     (*_session)(receivedData);
-
-// }
-
 void ServerHandler::OnReadyRead()
 {
+    //Who is sending
     QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
     if (!sock) return;
 
     _currentSocket = sock;
 
-    // Process all available complete lines
-    while (sock->canReadLine()) {
-        QByteArray line = sock->readLine().trimmed();
-        qDebug() << "[ServerHandler] received line:" << line;
+    QByteArray raw = sock->readAll();
+    receivedData = _jsonHandler->BytesToJson(raw);
+    _jsonHandler->Commands(receivedData,_currentSocket);
+    (*_session)(receivedData);
 
-        if (line.isEmpty()) continue;
-
-        // Parse JSON from this line
-        QJsonParseError error;
-        QJsonDocument doc = QJsonDocument::fromJson(line, &error);
-
-        if (error.error != QJsonParseError::NoError) {
-            qWarning() << "[ServerHandler] JSON parse error:" << error.errorString()
-            << "for line:" << line;
-            continue;
-        }
-
-        if (!doc.isObject()) {
-            qWarning() << "[ServerHandler] JSON is not an object:" << line;
-            continue;
-        }
-
-        QJsonObject receivedData = doc.object();
-        qDebug() << "[ServerHandler] processed JSON:" << receivedData;
-
-        // Process each JSON message
-        _jsonHandler->Commands(receivedData, _currentSocket);
-
-        qDebug() << "[ServerHandler] about to call GameSession with:" << receivedData;
-        qDebug() << "[ServerHandler] socket" << sock->socketDescriptor();
-        //if(receivedData["cmd"] == "PICKED") return;
-        (*_session)(receivedData);
-    }
 }
-
 
 void ServerHandler::OnSendError(const QJsonObject &errorPayload)
 {
     QJsonDocument doc(errorPayload);
-    QByteArray bytes = doc.toJson(QJsonDocument::Compact) + "\n";
+    QByteArray bytes = doc.toJson(QJsonDocument::Compact);
 
 
     if (!_currentSocket)
@@ -142,11 +90,6 @@ void ServerHandler::OnSendError(const QJsonObject &errorPayload)
     _currentSocket->write(bytes);
     _currentSocket->flush();
     emit NewDataSent();
-}
-
-Users *ServerHandler::users()
-{
-    return _users;
 }
 
 QJsonObject ServerHandler::getReceivedData() const
