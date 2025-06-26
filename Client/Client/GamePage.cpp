@@ -400,7 +400,7 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
         return;
     }
     else if(cmd == "ROUND_RESULT"){
-        showFadingMessage("You got:"+obj[_player->username()].toString()+"\nYour opponent:"+obj[opponent].toString(),1000,5000,1000);
+        showFadingMessage("You got:"+obj[_player->username()].toString()+"\nYour opponent:"+obj["opponent"].toString(),1000,5000,1000);
         for(auto& card:m_cards){
             if(card->scene() == _scene)
                 _scene->removeItem(card);
