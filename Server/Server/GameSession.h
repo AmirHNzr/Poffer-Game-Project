@@ -7,15 +7,54 @@
 #include <unordered_set>
 #include <random>
 #include "TimerThread.h"
+#include<QTcpSocket>
+#include"Users.h"
 
+enum class Hands {
+    None        =-1,
+    HighCard    = 0,
+    OnePair        ,
+    TwoPair        ,
+    ThreeOfAKind   ,
+    Straight       ,
+    Flush          ,
+    FullHouse      ,
+    FourOfAKind    ,
+    StraightFlush  ,
+    RoyalFlush
+};
 
+struct HandValue {
+    Hands            category;
+    std::vector<int> tiebreakers;
+};
+
+static constexpr const char* RANK_NAMES[13] = {
+    "2", "3", "4", "5", "6", "7",
+    "8", "9", "10", "Soldier", "Queen", "King", "Bitcoin"
+};
+
+static constexpr const char* SUIT_NAMES[4] = {
+    "Coin", "Dollar", "Gold", "Diamond"
+};
+
+inline void decodeCardIndex(int n, int& suitIndex, int& rankIndex) {
+    if (n < 1 || n > 52) {
+        suitIndex = -1;
+        rankIndex = -1;
+        return;
+    }
+    int zeroBased = n - 1;
+    suitIndex = zeroBased / 13;   // 0 = Coin, 1 = Dollar, 2 = Gold, 3 = Diamond
+    rankIndex = zeroBased % 13;   // 0 = "2" ,10 = "Queen", 11 = "King", 12 = "Bitcoin"
+}
 
 
 class GameSession : public QObject
 {
     Q_OBJECT
 public:
-    explicit GameSession(GameManager*,QObject *parent = nullptr);
+    explicit GameSession(GameManager*, Users* u = nullptr, QObject *parent = nullptr);
 
 
     void operator()(const QJsonObject&);
@@ -23,14 +62,18 @@ signals:
     void StopTimer();
 private:
     GameManager* _gm;
-    std::vector<QueueEntry> _sessionPlayers;
+    Users* _db;
+    std::vector<QueueEntry*> _sessionPlayers;
     QHash<int,QueueEntry> _playerOrder;
     QHash<QString,std::vector<int>> _playersCards;
+
+    QTcpSocket* _currSock;
 
 
     int _startedSessions;
     int _gameRound;
     int _innerRound;
+    bool haltDone;
     std::vector<int> _cards;
     std::vector<int> _drawnCards;
     std::random_device rd;
@@ -46,6 +89,12 @@ private:
     void SendCards(QTcpSocket*);
     void DiscardCards();
     bool Halt(QTcpSocket*,int);
+
+    void IncomingCardPICKED(QTcpSocket*);
+
+    HandValue HandEvaluator(const std::vector<int> &cards);
+    bool CompareHands(const HandValue& hv1,const HandValue& hv2);
+    bool CompareHands(const std::vector<int>& hand1, const std::vector<int>& hand2);
 };
 
 #endif // GAMESESSION_H

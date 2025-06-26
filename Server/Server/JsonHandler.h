@@ -17,13 +17,17 @@ class JsonHandler : public QObject
 {
     Q_OBJECT
 public:
-    explicit JsonHandler(GameManager*,QObject* parent = nullptr);
+    explicit JsonHandler(GameManager*,Users* u=nullptr,QObject* parent = nullptr);
 
     void Commands(const QJsonObject&,QTcpSocket* _current=nullptr);
     QJsonObject BytesToJson(const QByteArray&);
 
+    Users *getDataBase() const;
+
 private:
     QJsonParseError _parseError;
+    QByteArray _accumulator;
+
     LoginCommand _loginHandler;
     RegisterCommand _registerHandler;
     GetHistoryCommand _historyHandler;
