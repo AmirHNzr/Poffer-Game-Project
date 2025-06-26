@@ -9,6 +9,7 @@
 #include"JsonHandler.h"
 #include"GameManager.h"
 #include"GameSession.h"
+#include"Users.h"
 
 
 class ServerHandler : public QObject
@@ -22,6 +23,8 @@ public:
     QHash<qintptr, QTcpSocket *> getClients() const;
 
     QJsonObject getReceivedData() const;
+
+    Users *users();
 
 signals:
     void NewConnection();
@@ -42,6 +45,7 @@ private:
     QJsonObject receivedData;
     GameManager* _gm;
     GameSession* _session;
+    Users* _users;
 };
 
 #endif // SERVERHANDLER_H
