@@ -34,9 +34,12 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
     ui->graphicsView->setScene(_scene);
     SetupFadingMsg();
 
-    if (!m_backPixmap.load(":/Images/cards/back.png")) {
-        qWarning() << "Failed to load back.png";
-    }
+    if(_players.first() == _player->username())
+        opponent = _players.last().toString();
+    opponent = _players.first().toString();
+
+    m_cards.clear();
+    m_visibleCards.clear();
 
     QSize targetSize(100, 100);
     //Preload all 52 face‐side pixmaps into m_facePixmaps
@@ -46,15 +49,16 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
         decodeCardIndex(n, suitIdx, rankIdx);
 
         // Build a resource path like ":/cards/Coin-2.JPG"
-        QString path = QString(":/Images/cards/%2-%1.JPG")
-                           .arg(RANK_NAMES[rankIdx])
-                           .arg(SUIT_NAMES[suitIdx]);
+        QString path = QString(":/Images/cards/%1-%2.JPG")
+                           .arg(SUIT_NAMES[suitIdx])
+                            .arg(RANK_NAMES[rankIdx]);
 
         QPixmap px;
         if (!px.load(path)) {
             qWarning() << "Could not load card image at" << path;
         }
         px = px.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        qDebug() << "card:"<< n<<"<><><><>px cahce:"<<px.cacheKey();
         m_facePixmaps[i] = px;
     }
 
@@ -76,17 +80,69 @@ GamePage::~GamePage()
 
 void GamePage::ShowCards(int xOffset=100,int yOffset=150)
 {
-    int x =0;
-    int y=0;
+    int x=-200;
+    int y=-200;
     for(auto& card:m_visibleCards){
-        connect(card, &CardItem::clicked, this, &GamePage::onCardClicked);
-        connect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
-
+        if (card->scene() == _scene) {
+            _scene->removeItem(card);
+        }
+        qDebug() << "<> Showing:" << card->getNum() << "<> pixmap:" << card->pixmap().cacheKey();
         card->setPos(x,y);
         _scene->addItem(card);
         x+=xOffset;
         y-=yOffset;
     }
+}
+
+void GamePage::ShowMainCards(int xOffset)
+{
+    if(m_cards.empty()) return;
+    int x=-100;
+    int y=100;
+    qDebug() << "show main crash";
+    for(auto& card:m_cards){
+        if (m_cardTimelines.contains(card)) {
+            QTimeLine* oldTl = m_cardTimelines.value(card);
+            if (oldTl->state() == QTimeLine::Running)
+                oldTl->stop();
+            oldTl->deleteLater();
+            m_cardTimelines.remove(card);
+        }
+
+        if (card->scene() == _scene) {
+            // If it’s already in the scene at some old position, remove it:
+            _scene->removeItem(card);
+        }
+        card->setPos(x,y);
+        _scene->addItem(card);
+        x+=xOffset;
+    }
+}
+
+void GamePage::SetupCardConnections(CardItem* card)
+{
+    connect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+    connect(card, &CardItem::doubleClicked, this,  [this,card](){
+        QJsonObject obj;
+        obj["cmd"] = "PICKED";
+        obj["username"] = _player->username();
+        obj["card"] = card->getNum();
+        qDebug() << "++++++Num in connection:" << card->getNum();
+        _controller->sendJson(obj);
+    });
+
+}
+
+void GamePage::stopAllAnimations()
+{
+    for (auto it = m_cardTimelines.begin(); it != m_cardTimelines.end(); ++it) {
+        QTimeLine *tl = it.value();
+        if (tl->state() == QTimeLine::Running) {
+            tl->stop();
+        }
+        tl->deleteLater();
+    }
+    m_cardTimelines.clear();
 }
 
 void GamePage::SetupFadingMsg()
@@ -174,9 +230,60 @@ void GamePage::onCardClicked(CardItem *card)
 
 void GamePage::CardSelected(CardItem *card)
 {
-    QPointF start = card->pos();
-    QPointF end = QPointF(start.x(), 500);
-    animateDeal(card, start, end);
+    qDebug() << "++++++Num in selected:" << card->getNum();
+    QPointF start;
+    QPointF end;
+    if(!m_cards.empty()){
+    auto lastCard = m_cards.back();
+    start = card->pos();
+    end = QPointF(lastCard->x()+50, 100);
+    m_cards.push_back(card);
+    }
+    else{
+        m_cards.push_back(card);
+        start = card->pos();
+        end = QPointF(0, 100);
+    }
+    auto itr = std::find(m_visibleCards.begin(),m_visibleCards.end(),card);
+    if(itr == m_visibleCards.end()){
+        qDebug() << "Reached end of visible cards---------";
+    }
+
+    if (m_cardTimelines.contains(card)) {
+        qDebug() << "deleting animation";
+
+        QTimeLine* oldTl = m_cardTimelines.value(card);
+        if (oldTl->state() == QTimeLine::Running)
+            oldTl->stop();
+        oldTl->deleteLater();
+        m_cardTimelines.remove(card);
+    }
+
+    qDebug() << "removing items form the scene";
+    _scene->removeItem(card); //potential pitfall
+    m_cards.back()->setPos(start);
+    _scene->addItem(m_cards.back());
+    animateDeal(m_cards.back(), start, end);
+
+    for(auto card:m_visibleCards){
+        if (m_cardTimelines.contains(card)) {
+            QTimeLine* oldTl = m_cardTimelines.value(card);
+            if (oldTl->state() == QTimeLine::Running)
+                oldTl->stop();
+            oldTl->deleteLater();
+            m_cardTimelines.remove(card);
+        }
+        if(std::find(m_cards.begin(),m_cards.end(),card) != m_cards.end()) continue;
+        animateDeal(card,card->pos(),QPointF(card->pos().x(),10000),10000);
+        card->setFlag(QGraphicsItem::ItemIsSelectable, false);
+        card->disconnect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+        //_scene->removeItem(card);
+    }
+    m_cards.back()->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    m_cards.back()->disconnect(m_cards.back(), &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+    qDebug() << "end of card select but after show main crash";
+
+    ShowMainCards(50);
 }
 
 void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos,const int& Time)
@@ -194,6 +301,7 @@ void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPoint
         QPointF pos = startPos * (1.0 - t) + endPos * t;
         animation->setPosAt(i / 100.0, pos);
     }
+    qDebug() << "animation crash";
 
     connect(timeLine, &QTimeLine::finished, this,[timeLine, animation]() {
         //Clean up when done
@@ -201,46 +309,104 @@ void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPoint
         timeLine->deleteLater();
     });
 
+    m_cardTimelines[card] = timeLine;
+
+    connect(timeLine, &QTimeLine::finished, this, [this, timeLine, animation, card]() {
+        animation->deleteLater();
+        timeLine->deleteLater();
+        // As soon as this timeline is done, erase it from the map
+        m_cardTimelines.remove(card);
+    });
     timeLine->start();
+
 }
 
 void GamePage::SessionOrders(const QJsonDocument &doc)
 {
-    for (CardItem* oldCard : m_visibleCards) {
-        delete oldCard;
-    }
-    m_visibleCards.clear();
+    qDebug() << "session";
+    stopAllAnimations();
 
     QJsonObject obj = doc.object();
     auto cmd = obj["cmd"].toString();
     CardItem* newCard = nullptr;
+
+    if(cmd != "ALMOST_TIMEOUT" && cmd != "TIMEOUT"){
+        qDebug() << "checking oldcards in visibles crash";
+
+
+
+        for (CardItem* oldCard : m_visibleCards) {
+            if(std::find(m_cards.begin(),m_cards.end(),oldCard) != m_cards.end()){
+                continue;}
+            if(oldCard->scene() == _scene)
+                _scene->removeItem(oldCard);
+            delete oldCard;
+        }
+        m_visibleCards.clear();
+        ShowMainCards(50);
+    }
+    qDebug() << "delete crash";
+
+
+
     if(cmd == "PLAYERS_ORDER"){
 
         int yours = obj["yours"].toInt();
         int opponents = obj["opponents"].toInt();
-        newCard = new CardItem(m_facePixmaps[yours],m_backPixmap);
+        newCard = new CardItem(m_facePixmaps[yours-1]);
         m_visibleCards.push_back(newCard);
-        newCard = new CardItem(m_facePixmaps[opponents],m_backPixmap);
+        newCard = new CardItem(m_facePixmaps[opponents-1]);
         m_visibleCards.push_back(newCard);
         ShowCards();
         showFadingMessage("You are "+obj["result"].toString());
-        for(auto card:m_visibleCards)
-            animateDeal(card,card->pos(),QPointF(card->pos().x(),10000),5000);
+        for(auto card:m_visibleCards){
+            animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),10000);
+        }
+        qDebug() << "order crash";
 
         return;
 
     }
     else if(cmd == "CARD_BATCH"){
+
+        qDebug() << "start batch crash";
+
         for(int i=0;;i++){
             QString key = QString::number(i);
             if (!obj.contains(key))
                 break;
             int n = obj[key].toInt();
-            newCard = new CardItem(m_facePixmaps[n],m_backPixmap);
-
+            newCard = new CardItem(m_facePixmaps[n-1],nullptr,n);
+            SetupCardConnections(newCard);
             m_visibleCards.push_back(newCard);
         }
-        ShowCards(50,0);
+        ShowCards(75,0);
+        qDebug() << "Batch crash";
+        return;
+
+    }
+    else if(cmd == "ALMOST_TIMEOUT"){
+        showFadingMessage("10 Seconds remaining...",1000,5000,1000);
+        return;
+    }
+    else if(cmd == "TIMEOUT"){
+        m_cards.push_back(m_visibleCards.back());
+        m_visibleCards.pop_back();
+        qDebug() << "TIMEOUT crash";
+        for(auto card:m_visibleCards){
+            animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),1000);
+
+        }
+        return;
+    }
+    else if(cmd == "ROUND_RESULT"){
+        showFadingMessage("You got:"+obj[_player->username()].toString()+"\nYour opponent:"+obj[opponent].toString(),1000,5000,1000);
+        for(auto& card:m_cards){
+            if(card->scene() == _scene)
+                _scene->removeItem(card);
+            delete card;
+        }
+        m_cards.clear();
     }
 
     //ShowCards();

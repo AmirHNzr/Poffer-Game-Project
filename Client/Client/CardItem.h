@@ -11,24 +11,25 @@ class CardItem : public QObject, public QGraphicsPixmapItem
 {
     Q_OBJECT
 public:
-    CardItem(const QPixmap &facePixmap, const QPixmap &backPixmap, QGraphicsItem *parent = nullptr);
+    CardItem(const QPixmap &facePixmap, QGraphicsItem *parent = nullptr,const int& num=0);
 
-    void setFaceUp(bool up);
 
-    bool isFaceUp() const { return m_faceUp; }
+    QPixmap face() const;
+
+    int getNum() const;
+    void setNum(int newNum);
+
+    bool operator==(const CardItem& lhs);
 
 signals:
-    void clicked(CardItem *self);
     void doubleClicked(CardItem* self);
 
 protected:
-    void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;  // ← override
+    void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
 
 private:
     QPixmap m_face;
-    QPixmap m_back;
-    bool   m_faceUp;
+    int num;
 };
 
 

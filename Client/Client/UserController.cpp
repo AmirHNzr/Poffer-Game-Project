@@ -57,7 +57,9 @@ QAbstractSocket::SocketState UserController::state()
 void UserController::sendJson(const QJsonObject &obj)
 {
     auto bytes = QJsonDocument(obj).toJson(QJsonDocument::Compact) + "\n";
+    qDebug() << ">>> Sending JSON payload:" << bytes;
     _socket.write(bytes);
+    _socket.flush();
 
 }
 
@@ -158,18 +160,36 @@ void UserController::socket_stateChanged(QAbstractSocket::SocketState state)
     emit stateChanged(state);
 }
 
+// void UserController::OnReadyRead()
+// {
+//     _buffer += _socket.readAll();
+
+//     QJsonParseError err;
+//     auto doc = QJsonDocument::fromJson(_buffer, &err);
+
+//     if (err.error == QJsonParseError::NoError && doc.isObject()) {
+//         emit jsonReceived(doc);
+//         _buffer.clear();
+//     }
+// }
+
 void UserController::OnReadyRead()
 {
-    _buffer += _socket.readAll();
+    while (_socket.canReadLine()) {
+        // readLine() returns everything up to and including the '\n'
+        QByteArray line = _socket.readLine().trimmed();
+        qDebug() << "[OnReadyRead] got line =" << line;
 
-    QJsonParseError err;
-    auto doc = QJsonDocument::fromJson(_buffer, &err);
-
-    if (err.error == QJsonParseError::NoError && doc.isObject()) {
-        emit jsonReceived(doc);
-        _buffer.clear();
+        QJsonParseError err;
+        QJsonDocument doc = QJsonDocument::fromJson(line, &err);
+        if (err.error == QJsonParseError::NoError && doc.isObject()) {
+            emit jsonReceived(doc);
+        }
+        else {
+            qWarning() << "[OnReadyRead] JSON parse failed:"
+                       << err.errorString()
+                       << "raw line =" << line;
+        }
     }
 }
-
-
 

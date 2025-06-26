@@ -31,9 +31,13 @@ public:
 private:
     Ui::GamePage *ui;
     PlayerInfo* _player;
+    QString opponent;
     QJsonArray _players;
     UserController* _controller;
-    QVector<CardItem*> m_cards;
+    std::vector<CardItem*> m_cards;
+    //Controlling animations
+    QHash<CardItem*, QTimeLine*>   m_cardTimelines;
+
 
     // Holds all 52 “face” pixmaps
     std::array<QPixmap, 52> m_facePixmaps;
@@ -48,11 +52,14 @@ private:
 
 
     void ShowCards(int,int);
+    void ShowMainCards(int);
+    void SetupCardConnections(CardItem *);
 
     //Show if they are first or not
     QLabel*   m_overlayLabel;
     QGraphicsOpacityEffect* m_opacityEffect;
     QPropertyAnimation*     m_fadeAnimation;
+    void stopAllAnimations();
     void SetupFadingMsg();
     void showFadingMessage(const QString& text, int fadeInMs = 500, int stayMs = 1000, int fadeOutMs = 500);
     //Fading animation

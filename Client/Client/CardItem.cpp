@@ -2,31 +2,38 @@
 
 
 
-CardItem::CardItem(const QPixmap &facePixmap, const QPixmap &backPixmap, QGraphicsItem *parent):
-    QObject(),QGraphicsPixmapItem(backPixmap,parent),m_face(facePixmap),m_back(backPixmap),m_faceUp(false)
+CardItem::CardItem(const QPixmap &facePixmap, QGraphicsItem *parent,const int& num):
+    QObject(),QGraphicsPixmapItem(facePixmap,parent),m_face(facePixmap),num{num}
 {
     setPixmap(m_face);
-
     setAcceptedMouseButtons(Qt::LeftButton);
     setFlag(QGraphicsItem::ItemIsSelectable);
 }
 
-void CardItem::setFaceUp(bool up)
-{
-    m_faceUp = up;
-    setPixmap(m_faceUp? m_face:m_back);
-}
-
-void CardItem::mousePressEvent(QGraphicsSceneMouseEvent *event)
-{
-    Q_UNUSED(event);
-    emit clicked(this);
-    QGraphicsPixmapItem::mousePressEvent(event);
-}
-
 void CardItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
 {
+    Q_UNUSED(event);
     emit doubleClicked(this);
     QGraphicsPixmapItem::mouseDoubleClickEvent(event);
+}
+
+int CardItem::getNum() const
+{
+    return num;
+}
+
+void CardItem::setNum(int newNum)
+{
+    num = newNum;
+}
+
+bool CardItem::operator==(const CardItem &lhs)
+{
+    return this->num == lhs.num;
+}
+
+QPixmap CardItem::face() const
+{
+    return m_face;
 }
 
