@@ -17,6 +17,25 @@ struct History
     bool operator>(const History& lhs){
         return date > lhs.date;
     }
+    History& operator=(const History& other)
+    {
+        if (this != &other) {
+            date     = other.date;
+            opponent = other.opponent;
+            result   = other.result;
+            for (int i = 0; i < 3; ++i)
+                rounds[i] = other.rounds[i];
+        }
+        return *this;
+    }
+    History(const History& other)
+        : date(other.date)
+        , opponent(other.opponent)
+        , result(other.result)
+    {
+        for (int i = 0; i < 3; ++i)
+            rounds[i] = other.rounds[i];
+    }
 };
 
 class User
@@ -44,15 +63,15 @@ public:
     void setPassword(const QString &newPassword);
 
     bool operator==(const User&);
-    std::queue<History> getHistory() const;
-    void setHistory(const std::queue<History> &newHistory);
+    std::vector<History> getHistory() const;
+    void setHistory(const std::vector<History> &newHistory);
 
 private:
     QString firstName,lastName;
     int phoneNum;
     QString eMail;
     QString userName,password;
-    std::queue<History> history;
+    std::vector<History> history;
 
 };
 

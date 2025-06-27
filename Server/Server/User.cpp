@@ -71,14 +71,16 @@ bool User::operator==(const User & lhs)
     return this->userName == lhs.getUserName();
 }
 
-std::queue<History> User::getHistory() const
+std::vector<History> User::getHistory() const
 {
     return history;
 }
 
-void User::setHistory(const std::queue<History> &newHistory)
+void User::setHistory(const std::vector<History> &newHistory)
 {
     history = newHistory;
 }
+
+
 
 

@@ -14,6 +14,8 @@ void RegisterCommand::Execute(const QJsonObject &payload)
     QString p = payload.value("password").toString();
 
     bool isAdded = data->AddUser(User(fn,ln,num,em,un,p));
+    qDebug() << "Before Writing file>>>\n";
+    data->WriteFile(User(fn,ln,num,em,un,p));
     if(isAdded){
         QJsonObject err;
         err["cmd"]   = "REGISTER_SUCCESS";

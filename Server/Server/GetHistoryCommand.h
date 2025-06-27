@@ -18,7 +18,7 @@ public:
 private:
     QJsonObject obj;
     Users* data;
-    std::queue<History> hist;
+    std::vector<History> hist;
 signals:
     void ValidationFailed(const QJsonObject& errorPayload);
     void ExecuteSuccessfully(const QJsonObject& successPayload);

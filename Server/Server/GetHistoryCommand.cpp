@@ -7,10 +7,7 @@ GetHistoryCommand::GetHistoryCommand(QObject *parent)
 void GetHistoryCommand::Execute(const QJsonObject &payload)
 {
     QJsonArray historyArray;
-    for(int i=0;!hist.empty() && i<3;i++){
-        History itr = hist.front();
-        hist.pop();
-
+    for(auto& itr: hist){
         QJsonObject oneEntry;
         oneEntry["date"]     = itr.date.toString(Qt::ISODate);
         oneEntry["opponent"] = itr.opponent;
