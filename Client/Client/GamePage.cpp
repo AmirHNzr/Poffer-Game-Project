@@ -408,6 +408,12 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
         }
         m_cards.clear();
     }
+    else if(cmd == "MATCH_RESULT"){
+        QMessageBox::information(this,
+                                 tr("Match Result"),
+                                 obj["msg"].toString());
+        accept();
+    }
 
     //ShowCards();
 

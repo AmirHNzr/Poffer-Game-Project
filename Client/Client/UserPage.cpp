@@ -74,6 +74,11 @@ void UserPage::onGameReady(const QJsonObject &gameInfo)
     // Instantiate GamePage
     // Pass: player info, opponent, etc.
     GamePage *gp = new GamePage(_controller,_player, players, this);
+    connect(gp, &QDialog::finished,this, &UserPage::show);
+    connect(gp, &QDialog::finished,this, [this](int){
+        ui->btnStart->setEnabled(true);
+    });
+    gp->setAttribute(Qt::WA_DeleteOnClose);
     gp->show();
     this->hide();
 }
