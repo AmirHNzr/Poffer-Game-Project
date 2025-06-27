@@ -14,6 +14,16 @@ void GameManager::enqueuePlayer(const QString &username, QTcpSocket *sock)
     tryStartGame();
 }
 
+std::vector<QueueEntry *> GameManager::queue() const
+{
+    return m_queue;
+}
+
+void GameManager::setQueueZero()
+{
+    m_queue.clear();
+}
+
 // std::vector<QueueEntry> GameManager::sessionPlayers() const
 // {
 //     return _sessionPlayers;

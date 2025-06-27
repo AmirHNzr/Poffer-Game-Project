@@ -30,6 +30,9 @@ public:
 
 
 
+    std::vector<QueueEntry *> queue() const;
+    void setQueueZero();
+
 signals:
     void queueUpdated(int count);
 

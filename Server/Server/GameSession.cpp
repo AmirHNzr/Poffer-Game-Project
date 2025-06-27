@@ -168,7 +168,7 @@ void GameSession::StartGame()
         obj["result"] = result ? "lost":"won";
         SendData(obj,_playerOrder[1].socket);
 
-        if(_playerOrder[1].wins == 2 || _playerOrder[2].wins == 2)
+        if(_playerOrder[0].wins == 2 || _playerOrder[1].wins == 2)
             break;
         _gameRound++;
         Halt(nullptr,2000);
@@ -176,11 +176,21 @@ void GameSession::StartGame()
 
 
     }
-    QJsonObject obj;
-    obj["cmd"] = "MATCH_RESULT";
-    obj["msg"] = "Match ended";
-    SendData(obj,_playerOrder[0].socket);
-    SendData(obj,_playerOrder[1].socket);
+    if(_playerOrder[1].wins == 2){
+        QJsonObject obj;
+        obj["cmd"] = "MATCH_RESULT";
+        obj["msg"] = "Match ended and you won";
+        SendData(obj,_playerOrder[1].socket);
+        obj["msg"] = "Match ended and you lost";
+        SendData(obj,_playerOrder[0].socket);}
+    else if(_playerOrder[0].wins == 2){
+        QJsonObject obj;
+        obj["cmd"] = "MATCH_RESULT";
+        obj["msg"] = "Match ended and you won";
+        SendData(obj,_playerOrder[0].socket);
+        obj["msg"] = "Match ended and you lost";
+        SendData(obj,_playerOrder[1].socket);}
+    _gm->setQueueZero();
 
 
 }
