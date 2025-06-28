@@ -77,6 +77,7 @@ void UserPage::onGameReady(const QJsonObject &gameInfo)
     connect(gp, &QDialog::finished,this, &UserPage::show);
     connect(gp, &QDialog::finished,this, [this](int){
         ui->btnStart->setEnabled(true);
+        ui->btnStart->setText("Start Game");
     });
     gp->setAttribute(Qt::WA_DeleteOnClose);
     gp->show();

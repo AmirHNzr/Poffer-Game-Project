@@ -21,10 +21,12 @@ SOURCES += \
     mainwindow.cpp
 
 HEADERS += \
+    ButtonItem.h \
     CardItem.h \
     GamePage.h \
     History.h \
     JsonHandler.h \
+    PauseOverlay.h \
     PlayerInfo.h \
     UserController.h \
     UserPage.h \
@@ -43,4 +45,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
+    assets.qrc \
     images.qrc

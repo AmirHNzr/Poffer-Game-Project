@@ -14,6 +14,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QPropertyAnimation>
 #include <QTimer>
+#include"ButtonItem.h"
+#include"PauseOverlay.h"
 
 
 namespace Ui {
@@ -38,6 +40,15 @@ private:
     //Controlling animations
     QHash<CardItem*, QTimeLine*>   m_cardTimelines;
 
+    ButtonItem* pauseBtn;
+    ButtonItem* resumeBtn;
+    PauseOverlay* overlay;
+
+    int _pause;
+    int _remain;
+    QTimer* _pauseTimer;
+
+
 
     // Holds all 52 “face” pixmaps
     std::array<QPixmap, 52> m_facePixmaps;
@@ -61,9 +72,13 @@ private:
     QPropertyAnimation*     m_fadeAnimation;
     void stopAllAnimations();
     void SetupFadingMsg();
-    void showFadingMessage(const QString& text, int fadeInMs = 500, int stayMs = 1000, int fadeOutMs = 500);
     //Fading animation
+    void showFadingMessage(const QString& text, int fadeInMs = 500, int stayMs = 1000, int fadeOutMs = 500);
 
+    bool isPaused;
+
+    void Pause();
+    void Resume();
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -80,6 +95,8 @@ private slots:
     void animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos,const int& time=250);
 
     void SessionOrders(const QJsonDocument&);
+
+    void PauseResHandle();
 };
 
 #endif // GAMEPAGE_H

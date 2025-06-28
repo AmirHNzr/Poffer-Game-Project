@@ -28,7 +28,9 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
     , _player(p)
     , _players(ps)
     , _controller(c)
+    , _pause{2}
     , _scene(new QGraphicsScene(this))
+    , isPaused{false}
 {
     ui->setupUi(this);
     ui->graphicsView->setScene(_scene);
@@ -66,7 +68,27 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
 
     connect(_controller,&UserController::jsonReceived,this,&GamePage::SessionOrders);
 
+    ui->respauseBtn->setFixedHeight(50);
+    ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/PauseDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/PauseHover.png);
+                                      }
+                                    )");
+    connect(ui->respauseBtn,&QPushButton::pressed,this,&GamePage::PauseResHandle);
 
+    _pauseTimer = new QTimer(this);
+    _pauseTimer->setSingleShot(true);
+    connect(_pauseTimer, &QTimer::timeout,this, [this](){
+        showFadingMessage("10 Seconds of pause remains...",1000,2000,1000);
+    });
+
+    overlay = nullptr;
 }
 
 GamePage::~GamePage()
@@ -208,6 +230,9 @@ void GamePage::resizeEvent(QResizeEvent *event)
     //Resize sceneRect(0,0)→(viewportWidth, viewportHeight)
     const QSize vp = ui->graphicsView->viewport()->size();
     _scene->setSceneRect(0, 0, vp.width(), vp.height());
+    // In showEvent or resizeEvent, add:
+    qDebug() << "GraphicsView viewport size:" << ui->graphicsView->viewport()->size();
+    qDebug() << "Scene rect:" << _scene->sceneRect();
 }
 
 void GamePage::showEvent(QShowEvent *event)
@@ -330,7 +355,8 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
     auto cmd = obj["cmd"].toString();
     CardItem* newCard = nullptr;
 
-    if(cmd != "ALMOST_TIMEOUT" && cmd != "TIMEOUT"){
+
+    if(cmd != "ALMOST_TIMEOUT" && cmd != "TIMEOUT" && cmd != "PAUSE" && cmd != "RESUME"){
         qDebug() << "checking oldcards in visibles crash";
 
 
@@ -347,6 +373,18 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
     }
     qDebug() << "delete crash";
 
+    if(cmd == "PAUSE"){
+        if(obj["username"] == _player->username())
+            return;
+        Pause();
+        return;
+    }
+    else if(cmd == "RESUME"){
+        if(obj["username"] == _player->username())
+            return;
+        Resume();
+        return;
+    }
 
 
     if(cmd == "PLAYERS_ORDER"){
@@ -400,7 +438,8 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
         return;
     }
     else if(cmd == "ROUND_RESULT"){
-        showFadingMessage("You got:"+obj[_player->username()].toString()+"\nYour opponent:"+obj["opponent"].toString(),1000,5000,1000);
+        showFadingMessage("You got:"+obj[_player->username()].toString()+"\nYour opponent:"+obj["opponent"].toString()
+                          +"\nYou "+obj["result"].toString()+" this round",1000,5000,1000);
         for(auto& card:m_cards){
             if(card->scene() == _scene)
                 _scene->removeItem(card);
@@ -415,10 +454,84 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
         accept();
     }
 
+
     //ShowCards();
 
 
 }
+
+void GamePage::Pause(){
+    ui->graphicsView->setInteractive(false);
+    for (auto *item : _scene->items())
+        item->setEnabled(false);
+
+    overlay = new PauseOverlay(_scene->sceneRect());
+    _scene->addItem(overlay);
+
+    _pauseTimer->start(10'000);
+}
+void GamePage::Resume(){
+    ui->graphicsView->setInteractive(true);
+    for (auto *item : _scene->items())
+        item->setEnabled(true);
+
+    _scene->removeItem(overlay);
+    delete overlay;
+    overlay = nullptr;
+    _pauseTimer->stop();
+}
+
+void GamePage::PauseResHandle()
+{
+    if(!isPaused){
+        QJsonObject obj;
+        obj["cmd"] = "PAUSED";
+        obj["username"] = _player->username();
+        _controller->sendJson(obj);
+
+        ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/ResumeDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/ResumeHover.png);
+                                      }
+                                    )");
+        _pause--;
+        isPaused = true;
+        Pause();
+    }
+    else if(isPaused){
+        QJsonObject obj;
+        obj["cmd"] = "RESUMED";
+        obj["username"] = _player->username();
+        _controller->sendJson(obj);
+
+        ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/PauseDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/PauseHover.png);
+                                      }
+                                    )");
+
+        isPaused = false;
+        Resume();
+
+        if(_pause == 0){
+            ui->respauseBtn->setDisabled(true);
+        }
+    }
+
+}
+
 
 
 
