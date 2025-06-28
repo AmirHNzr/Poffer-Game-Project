@@ -8,6 +8,7 @@
 #include <random>
 #include "TimerThread.h"
 #include<QTcpSocket>
+#include<QTimer>
 #include"Users.h"
 
 enum class Hands {
@@ -22,6 +23,14 @@ enum class Hands {
     FourOfAKind    ,
     StraightFlush  ,
     RoyalFlush
+};
+
+enum class GamePhase {
+    None = -1,
+    dealingP1,
+    dealingP2,
+    SwitchPs
+
 };
 
 struct HandValue {
@@ -68,6 +77,8 @@ private:
     QHash<QString,std::vector<int>> _playersCards;
 
     QTcpSocket* _currSock;
+    QueueEntry _currPlayer;
+    GamePhase _gamePhase = GamePhase::None;
 
 
     int _startedSessions;
@@ -83,6 +94,7 @@ private:
 
     void ResetCards();
     void StartGame();
+    void ResetSession();
 
     void PickFirstPlayer();
     void DrawCards(const int& num);
@@ -95,6 +107,18 @@ private:
     HandValue HandEvaluator(const std::vector<int> &cards);
     bool CompareHands(const HandValue& hv1,const HandValue& hv2);
     bool CompareHands(const std::vector<int>& hand1, const std::vector<int>& hand2);
+    void RoundRes();
+    void MatchRes();
+
+    // Asynchronicity
+
+    QTimer* _timeoutTimer;
+    QElapsedTimer _elapsed;
+    int remainingTimeMs, timeoutCnt;
+    void Dealing();
+    void SetupTimer(int ms);
+private slots:
+    void onTimeout();
 };
 
 #endif // GAMESESSION_H

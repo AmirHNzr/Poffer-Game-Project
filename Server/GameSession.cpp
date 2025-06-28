@@ -20,12 +20,16 @@ const QString handCategoryToString(Hands h) {
 GameSession::GameSession(GameManager* gm, Users* u,QObject *parent)
     : QObject{parent},_gm{gm},_db{u}
 {
+    _timeoutTimer = new QTimer(this);
+    _timeoutTimer->setSingleShot(true);
+    connect(_timeoutTimer, &QTimer::timeout,this, &GameSession::onTimeout);
 
     _startedSessions = 0;
     _gameRound = 1;
     _innerRound = 1;
 
     ResetCards();
+    _gamePhase = GamePhase::dealingP1;
 
 
 }
@@ -36,14 +40,18 @@ void GameSession::operator()(const QJsonObject &obj)
     qDebug() << "[GameSession] received cmd =" << cmd << ", full object =" << obj;
 
     if(cmd == "GAME_STARTED"){
+        qDebug() << "in GAME_STARTED\n";
         _startedSessions++;
+        qDebug() << _startedSessions << "\n";
+
         if(_startedSessions == 2){
             if(!_gm->_sessionPlayers.empty()){
                 _sessionPlayers.push_back(_gm->_sessionPlayers.back());
                 _gm->_sessionPlayers.pop_back();
                 if(!_gm->_sessionPlayers.empty()){
                     _sessionPlayers.push_back(_gm->_sessionPlayers.back());
-                    _gm->_sessionPlayers.pop_back();}
+                    _gm->_sessionPlayers.pop_back();
+                }
             }
 
             StartGame();}
@@ -60,6 +68,19 @@ void GameSession::operator()(const QJsonObject &obj)
 
         _drawnCards.erase(itr);
         _playersCards[obj["username"].toString()].push_back(num);
+        timeoutCnt = 0;
+        if(_currPlayer.username == _playerOrder[0].username){
+            qDebug() << "now player 2";
+            _gamePhase = GamePhase::dealingP2;
+            _currPlayer = _playerOrder[1];
+            StartGame();
+        }
+        else{
+            qDebug() << "end of round";
+            _innerRound++;
+            _gamePhase = GamePhase::SwitchPs;
+            StartGame();
+        }
     }
 }
 
@@ -86,96 +107,146 @@ void GameSession::ResetCards()
 
 void GameSession::StartGame()
 {
-    qDebug() << ">><< entry:" << _sessionPlayers[0]->username << _sessionPlayers[0]->socket->socketDescriptor();
-    qDebug() << ">><< entry:" << _sessionPlayers[1]->username << _sessionPlayers[1]->socket->socketDescriptor();
-    while(_gameRound <= 3){
-        /*
-         * 1-Send random cards to choose first player
-         * 2-Add first player and sec to QHash
-         * 3-Go in the inner loop of game (loop for 5 time)
-         * in each inner loop:
-         * 4-Send first player batch of 7 cards
-         * 5-Receive the chosen card
-         * 6-Propagate the 6 remaining to another player
-         * 7-Receive the chosen card and discard the 5 remaining
-         * 8-For other inner loops shuffle the remaining cards and switch the first and second player
-         * 9-after 5 inner loops we have 5 card for each player
-         * 10-specify the hand they have and send a signal to winner and loser
-         * 11-Add win and lose for corresponding user (make a profile for them)
-         */
-        PickFirstPlayer();
-        ResetCards();
-        _playersCards[_playerOrder[0].username].clear();
-        _playersCards[_playerOrder[1].username].clear();
-        _innerRound = 1;
 
-        while(_innerRound <=5){
-            _drawnCards.clear();
-            DrawCards(7);
-            DiscardCards();
+    if(_gameRound <= 3){
 
-            SendCards(_playerOrder[0].socket);
-            haltDone = false;
-            IncomingCardPICKED(_playerOrder[0].socket);
-            if(!haltDone){
-                _playersCards[_playerOrder[0].username].push_back(_drawnCards.back());
-                _drawnCards.pop_back();
+        if(_innerRound <=5){
+            qDebug() << "innerRound no.:" << _innerRound;
+            qDebug() << "Round no.:" << _gameRound;
+            if(_innerRound == 1 && _gamePhase == GamePhase::dealingP1){
+                qDebug() << "<<<>>>Preparing inRound:" << _gameRound;
+                timeoutCnt = 0;
+                PickFirstPlayer();
+                ResetCards();
+                _playersCards[_playerOrder[0].username].clear();
+                _playersCards[_playerOrder[1].username].clear();
             }
-
-            SendCards(_playerOrder[1].socket);
-            haltDone = false;
-            IncomingCardPICKED(_playerOrder[1].socket);
-            if(!haltDone){
-                _playersCards[_playerOrder[1].username].push_back(_drawnCards.back());
-                _drawnCards.pop_back();
+            switch(_gamePhase){
+            case GamePhase::dealingP1:
+                qDebug() << "???????dealing P1:";
+                Dealing();
+                break;
+            case GamePhase::dealingP2:
+                qDebug() << "???????dealing P2";
+                Dealing();
+                break;
+            case GamePhase::SwitchPs:
+                qDebug() << "???????Switch up";
+                Dealing();
+            case GamePhase::None:
+                break;
             }
-            std::swap(_playerOrder[0],_playerOrder[1]);
-
-            _innerRound++;
+        }
+        else{
+            qDebug() << "{}>>>>on displaying inround res";
+            qDebug() << _innerRound;
+            RoundRes();
+            ResetCards();
+            _innerRound = 1;
+            _gameRound++;
+            StartGame();
         }
 
-        QJsonObject obj;
-        // QJsonArray opponent,opponent2;
+    }else{
+        MatchRes();
+        ResetSession();}
+}
 
-        obj["cmd"] = "ROUND_RESULT";
-        HandValue P0 = HandEvaluator(_playersCards[_playerOrder[0].username]);
-        HandValue P1 = HandEvaluator(_playersCards[_playerOrder[1].username]);
-        bool result = CompareHands(P0,P1);
-
-        qDebug() << "/|\\ Player1 hand:" << handCategoryToString(P0.category);
-        qDebug() << "/|\\ Player2 hand:" << handCategoryToString(P1.category);
-        obj[_playerOrder[0].username] = handCategoryToString(P0.category);
-        obj[_playerOrder[1].username] = handCategoryToString(P1.category);
-        qDebug() << "/|\\ Player1 obj hand:" << obj[_playerOrder[0].username].toString();
-        qDebug() << "/|\\ Player2 obj hand:" << obj[_playerOrder[1].username].toString();
-
-        // for(auto& card:_playersCards[_playerOrder[0].username])
-        //     opponent.append(card);
-        obj["opponent"] = handCategoryToString(P1.category);
-        qDebug() << "/|\\ opponent obj hand:" << obj["opponent"].toString();
-
-        obj["result"] = result ? "won":"lost";
-        SendData(obj,_playerOrder[0].socket);
-
-        result ? _playerOrder[0].wins++ : _playerOrder[1].wins++;
-
-
-        // for(auto& card:_playersCards[_playerOrder[1].username])
-        //     opponent2.append(card);
-        obj["opponent"] = handCategoryToString(P0.category);
-        qDebug() << "/|\\ opponent obj hand:" << obj["opponent"].toString();
-
-        obj["result"] = result ? "lost":"won";
-        SendData(obj,_playerOrder[1].socket);
-
-        if(_playerOrder[0].wins == 2 || _playerOrder[1].wins == 2)
-            break;
-        _gameRound++;
-        Halt(nullptr,2000);
-
-
-
+void GameSession::Dealing(){
+    if(_gamePhase == GamePhase::dealingP1){
+        _currPlayer = _playerOrder[0];
+        DrawCards(7);
+        DiscardCards();
+        SendCards(_playerOrder[0].socket);
+        SetupTimer(20'000);
     }
+    if(_gamePhase == GamePhase::dealingP2){
+        //DiscardCards();
+        SendCards(_playerOrder[1].socket);
+        SetupTimer(20'000);
+    }
+    if(_gamePhase == GamePhase::SwitchPs){
+        _drawnCards.clear();
+        std::swap(_playerOrder[0],_playerOrder[1]);
+        _gamePhase = GamePhase::dealingP1;
+        StartGame();
+    }
+}
+
+void GameSession::SetupTimer(int ms){
+    _timeoutTimer->start(ms);
+
+}
+
+void GameSession::onTimeout()
+{
+    if(timeoutCnt == 0){
+        QJsonObject almost;
+        almost["cmd"] = "ALMOST_TIMEOUT";
+        SendData(almost, _currPlayer.socket);
+        SetupTimer(10'000);
+        timeoutCnt++;
+    }
+    else if(timeoutCnt == 1){
+        QJsonObject almost;
+        almost["cmd"] = "TIMEOUT";
+        SendData(almost, _currPlayer.socket);
+
+        almost["cmd"] = "PICKED";
+        almost["username"] = _currPlayer.username;
+        almost["card"] = _drawnCards.back();
+        (*this)(almost);
+        haltDone = false;
+
+        timeoutCnt = 0;
+    }
+
+}
+
+
+void GameSession::RoundRes(){
+    QJsonObject obj;
+    // QJsonArray opponent,opponent2;
+    obj["cmd"] = "ROUND_RESULT";
+    HandValue P0 = HandEvaluator(_playersCards[_playerOrder[0].username]);
+    HandValue P1 = HandEvaluator(_playersCards[_playerOrder[1].username]);
+    bool result = CompareHands(P0,P1);
+
+    qDebug() << "/|\\ Player1 hand:" << handCategoryToString(P0.category);
+    qDebug() << "/|\\ Player2 hand:" << handCategoryToString(P1.category);
+    obj[_playerOrder[0].username] = handCategoryToString(P0.category);
+    obj[_playerOrder[1].username] = handCategoryToString(P1.category);
+    qDebug() << "/|\\ Player1 obj hand:" << obj[_playerOrder[0].username].toString();
+    qDebug() << "/|\\ Player2 obj hand:" << obj[_playerOrder[1].username].toString();
+
+    // for(auto& card:_playersCards[_playerOrder[0].username])
+    //     opponent.append(card);
+    obj["opponent"] = handCategoryToString(P1.category);
+    qDebug() << "/|\\ opponent obj hand:" << obj["opponent"].toString();
+
+    obj["result"] = result ? "won":"lost";
+    SendData(obj,_playerOrder[0].socket);
+
+    result ? _playerOrder[0].wins++ : _playerOrder[1].wins++;
+
+
+    // for(auto& card:_playersCards[_playerOrder[1].username])
+    //     opponent2.append(card);
+    obj["opponent"] = handCategoryToString(P0.category);
+    qDebug() << "/|\\ opponent obj hand:" << obj["opponent"].toString();
+
+    obj["result"] = result ? "lost":"won";
+    SendData(obj,_playerOrder[1].socket);
+
+    if(_playerOrder[0].wins == 2 || _playerOrder[1].wins == 2){
+        Halt(nullptr,2000);
+        return;}
+    Halt(nullptr,2000);
+    qDebug() << "{}>>>>end of displaying inround res";
+    qDebug() << _innerRound;
+}
+
+void GameSession::MatchRes(){
     if(_playerOrder[1].wins == 2){
         QJsonObject obj;
         obj["cmd"] = "MATCH_RESULT";
@@ -190,9 +261,22 @@ void GameSession::StartGame()
         SendData(obj,_playerOrder[0].socket);
         obj["msg"] = "Match ended and you lost";
         SendData(obj,_playerOrder[1].socket);}
+
+    ResetSession();
+}
+
+void GameSession::ResetSession()
+{
     _gm->setQueueZero();
-
-
+    _startedSessions = 0;
+    _gameRound = 1;
+    _innerRound = 1;
+    haltDone = false;
+    ResetCards();
+    _drawnCards.clear();
+    _sessionPlayers.clear();
+    _playerOrder.clear();
+    _playersCards.clear();
 }
 
 void GameSession::PickFirstPlayer()
@@ -318,42 +402,46 @@ bool GameSession::Halt(QTcpSocket* _sock,int halt)
 
 void GameSession::IncomingCardPICKED(QTcpSocket *sock)
 {
-    if (sock->waitForReadyRead(20000)) {
-        QByteArray line = sock->readLine().trimmed();
-        QJsonParseError parseError;
-        QJsonDocument  doc    = QJsonDocument::fromJson(line, &parseError);
-        if (!parseError.error && doc.isObject()) {
-            QJsonObject obj = doc.object();
-            if (obj.value("cmd").toString() == "PICKED")
-                (*this)(obj);
+    // if (sock->waitForReadyRead(20000)) {
+    //     QByteArray line = sock->readLine().trimmed();
+    //     QJsonParseError parseError;
+    //     QJsonDocument  doc    = QJsonDocument::fromJson(line, &parseError);
+    //     if (!parseError.error && doc.isObject()) {
+    //         QJsonObject obj = doc.object();
+    //         if (obj.value("cmd").toString() == "PICKED")
+    //             (*this)(obj);
 
-        }
-        haltDone = true;
-        return;
+    //     }
+    //     haltDone = true;
+    //     return;
 
-    }
-    else{
-        QJsonObject almost;
-        almost["cmd"] = "ALMOST_TIMEOUT";
-        SendData(almost, sock);
-    }
+    // }
+    // else{
+    //     QJsonObject almost;
+    //     almost["cmd"] = "ALMOST_TIMEOUT";
+    //     SendData(almost, sock);
+    // }
 
-    if (sock->waitForReadyRead(10000)) {
-        QByteArray line2 = sock->readLine().trimmed();
-        QJsonParseError parseError2;
-        QJsonDocument  doc2= QJsonDocument::fromJson(line2, &parseError2);
-        if (!parseError2.error && doc2.isObject()) {
-            QJsonObject obj2 = doc2.object();
-            if (obj2.value("cmd").toString() == "PICKED")
-                (*this)(obj2);
-            haltDone = true;
-            return;
+    // if (sock->waitForReadyRead(10000)) {
+    //     QByteArray line2 = sock->readLine().trimmed();
+    //     QJsonParseError parseError2;
+    //     QJsonDocument  doc2= QJsonDocument::fromJson(line2, &parseError2);
+    //     if (!parseError2.error && doc2.isObject()) {
+    //         QJsonObject obj2 = doc2.object();
+    //         if (obj2.value("cmd").toString() == "PICKED")
+    //             (*this)(obj2);
+    //         haltDone = true;
+    //         return;
 
-        }
-    }
-    else
-        haltDone = false;
+    //     }
+    // }
+    // else{
+    //     QJsonObject almost;
+    //     almost["cmd"] = "ALMOST_TIMEOUT";
+    //     SendData(almost, sock);
 
+    //     haltDone = false;
+    // }
 }
 
 HandValue GameSession::HandEvaluator(const std::vector<int>& cards)
@@ -363,10 +451,10 @@ HandValue GameSession::HandEvaluator(const std::vector<int>& cards)
     std::vector<int> handOne = cards;
 
     if(handOne.size() != 5){
-    qWarning() << "something is not right";
-    hv.category = Hands::HighCard;
-    hv.tiebreakers = { -1 };
-    return hv;    }
+        qWarning() << "something is not right";
+        hv.category = Hands::HighCard;
+        hv.tiebreakers = { -1 };
+        return hv;    }
 
     int suitsCount[4]{0};
     int ranksCount[13]{0};
@@ -401,8 +489,8 @@ HandValue GameSession::HandEvaluator(const std::vector<int>& cards)
         }
     }
     std::sort(freqCounts.begin(), freqCounts.end(),[](auto &a, auto &b){
-                                                      if (a.first != b.first) return (a.first > b.first);
-                                                      else                    return (a.second > b.second);});
+        if (a.first != b.first) return (a.first > b.first);
+        else                    return (a.second > b.second);});
 
     // Check for Straight
     // criteria: 1- Five distinct cards, 2- Five distinct consecutive cards

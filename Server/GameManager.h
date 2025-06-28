@@ -25,18 +25,11 @@ public:
 
     void broadcastQueueCount();
     std::vector<QueueEntry*> _sessionPlayers;
-
-
-
-
-
     std::vector<QueueEntry *> queue() const;
     void setQueueZero();
 
 signals:
     void queueUpdated(int count);
-
-
 private:
     std::vector<QueueEntry*> m_queue;
     static constexpr int REQUIRED_PLAYERS = 2;
