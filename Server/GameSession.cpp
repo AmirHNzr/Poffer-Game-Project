@@ -24,6 +24,11 @@ GameSession::GameSession(GameManager* gm, Users* u,QObject *parent)
     _timeoutTimer->setSingleShot(true);
     connect(_timeoutTimer, &QTimer::timeout,this, &GameSession::onTimeout);
 
+    _pauseTimer = new QTimer(this);
+    _pauseTimer->setSingleShot(true);
+    connect(_pauseTimer, &QTimer::timeout,this, &GameSession::onTimeout);
+    _pause = false;
+
     _startedSessions = 0;
     _gameRound = 1;
     _innerRound = 1;
@@ -77,10 +82,42 @@ void GameSession::operator()(const QJsonObject &obj)
         }
         else{
             qDebug() << "end of round";
+            for(auto card:_playersCards[_playerOrder[0].username]){
+                qDebug() << card;
+            }
+            for(auto card:_playersCards[_playerOrder[1].username]){
+                qDebug() << card;
+            }
             _innerRound++;
             _gamePhase = GamePhase::SwitchPs;
             StartGame();
         }
+    }
+    else if(cmd == "PAUSED"){
+        _pausePlayer = obj["username"].toString();
+
+        QJsonObject pause;
+        pause["cmd"] = "PAUSE";
+        pause["username"] = _pausePlayer;
+
+        SendData(pause,_playerOrder[0].socket);
+        SendData(pause,_playerOrder[1].socket);
+
+        _pause = true;
+        _pauseTimer->start(20'000);
+
+    }
+    else if(cmd == "RESUMED"){
+        _pauseTimer->stop();
+        _pause = false;
+
+        QJsonObject pause;
+        pause["cmd"] = "RESUME";
+        pause["username"] = _pausePlayer;
+
+        SendData(pause,_playerOrder[0].socket);
+        SendData(pause,_playerOrder[1].socket);
+
     }
 }
 
@@ -108,8 +145,11 @@ void GameSession::ResetCards()
 void GameSession::StartGame()
 {
 
-    if(_gameRound <= 3){
 
+    if(_gameRound <= 3){
+        if(_playerOrder[1].wins == 2 || _playerOrder[0].wins == 2){
+            MatchRes();
+            return;}
         if(_innerRound <=5){
             qDebug() << "innerRound no.:" << _innerRound;
             qDebug() << "Round no.:" << _gameRound;
@@ -149,7 +189,7 @@ void GameSession::StartGame()
 
     }else{
         MatchRes();
-        ResetSession();}
+    }
 }
 
 void GameSession::Dealing(){
@@ -180,6 +220,22 @@ void GameSession::SetupTimer(int ms){
 
 void GameSession::onTimeout()
 {
+    if(_pause == true){
+        QJsonObject obj;
+
+        if(_playerOrder[0].username != _pausePlayer)
+            std::swap(_playerOrder[0],_playerOrder[1]);
+
+        obj["cmd"] = "MATCH_RESULT";
+        obj["msg"] = "Match ended and you won";
+        SendData(obj,_playerOrder[1].socket);
+        obj["msg"] = "Match ended and you lost";
+        SendData(obj,_playerOrder[0].socket);
+
+        _pause = false;
+        ResetSession();
+        return;
+    }
     if(timeoutCnt == 0){
         QJsonObject almost;
         almost["cmd"] = "ALMOST_TIMEOUT";
@@ -247,6 +303,7 @@ void GameSession::RoundRes(){
 }
 
 void GameSession::MatchRes(){
+    qDebug() << "[MATCH RES]";
     if(_playerOrder[1].wins == 2){
         QJsonObject obj;
         obj["cmd"] = "MATCH_RESULT";
@@ -277,6 +334,8 @@ void GameSession::ResetSession()
     _sessionPlayers.clear();
     _playerOrder.clear();
     _playersCards.clear();
+
+    _timeoutTimer->stop();
 }
 
 void GameSession::PickFirstPlayer()
@@ -400,7 +459,7 @@ bool GameSession::Halt(QTcpSocket* _sock,int halt)
     return playerHasData;
 }
 
-void GameSession::IncomingCardPICKED(QTcpSocket *sock)
+/*void GameSession::IncomingCardPICKED(QTcpSocket *sock)
 {
     // if (sock->waitForReadyRead(20000)) {
     //     QByteArray line = sock->readLine().trimmed();
@@ -442,7 +501,7 @@ void GameSession::IncomingCardPICKED(QTcpSocket *sock)
 
     //     haltDone = false;
     // }
-}
+}*/
 
 HandValue GameSession::HandEvaluator(const std::vector<int>& cards)
 {

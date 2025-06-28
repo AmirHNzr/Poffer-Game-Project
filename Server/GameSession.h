@@ -113,6 +113,11 @@ private:
     // Asynchronicity
 
     QTimer* _timeoutTimer;
+    QTimer* _pauseTimer;
+
+    bool _pause;
+    QString _pausePlayer;
+
     QElapsedTimer _elapsed;
     int remainingTimeMs, timeoutCnt;
     void Dealing();
