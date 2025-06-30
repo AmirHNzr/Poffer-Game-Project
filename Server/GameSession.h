@@ -124,6 +124,8 @@ private:
     void SetupTimer(int ms);
 private slots:
     void onTimeout();
+    void onPlayerDisconnected();
+    void onPlayerReconnected();
 };
 
 #endif // GAMESESSION_H

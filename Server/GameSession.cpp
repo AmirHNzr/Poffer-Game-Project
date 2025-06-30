@@ -57,9 +57,34 @@ void GameSession::operator()(const QJsonObject &obj)
                     _sessionPlayers.push_back(_gm->_sessionPlayers.back());
                     _gm->_sessionPlayers.pop_back();
                 }
-            }
 
+            }
+            for (auto entry : _sessionPlayers) {
+                QTcpSocket* sock = entry->socket;
+                connect(sock, &QTcpSocket::disconnected,
+                        this, &GameSession::onPlayerDisconnected);
+                connect(sock, &QTcpSocket::readyRead,
+                        this, &GameSession::onPlayerReconnected);
+            }
             StartGame();}
+    }
+    else if(cmd == "EXIT"){
+        if(obj["username"].toString() == _playerOrder[0].username){
+            QJsonObject exit;
+            exit["cmd"] = "MATCH_RESULT";
+            exit["msg"] = "Other player gave up on match and you won";
+            SendData(exit,_playerOrder[1].socket);
+            ResetSession();
+            return;
+        }
+        else{
+            QJsonObject exit;
+            exit["cmd"] = "MATCH_RESULT";
+            exit["msg"] = "Other player gave up on match and you won";
+            SendData(exit,_playerOrder[0].socket);
+            ResetSession();
+            return;
+        }
     }
     // They have to send username and picked card in order to work correctly
     else if(cmd == "PICKED"){
@@ -119,6 +144,45 @@ void GameSession::operator()(const QJsonObject &obj)
         SendData(pause,_playerOrder[1].socket);
 
     }
+}
+
+void GameSession::onPlayerDisconnected()
+{
+    QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
+    QString user;
+    if (sock == _playerOrder[0].socket)      user = _playerOrder[0].username;
+    else if (sock == _playerOrder[1].socket) user = _playerOrder[1].username;
+    else                                      return;
+
+    _pausePlayer = user;
+    _pause = true;
+
+    QJsonObject pauseMsg;
+    pauseMsg["cmd"]      = "DISCONNECTION";
+    pauseMsg["username"] = user;
+    SendData(pauseMsg, _playerOrder[0].socket);
+    SendData(pauseMsg, _playerOrder[1].socket);
+
+    _pauseTimer->start(20'000);
+}
+
+void GameSession::onPlayerReconnected()
+{
+    QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
+    QString user;
+    if (sock == _playerOrder[0].socket) user = _playerOrder[0].username;
+    else if (sock == _playerOrder[1].socket) user = _playerOrder[1].username;
+    else return;
+
+    if (!_pause || user != _pausePlayer) return;
+    _pauseTimer->stop();
+    _pause = false;
+
+    QJsonObject resumeMsg;
+    resumeMsg["cmd"]      = "RECONNECTION";
+    resumeMsg["username"] = user;
+    SendData(resumeMsg, _playerOrder[0].socket);
+    SendData(resumeMsg, _playerOrder[1].socket);
 }
 
 void GameSession::SendData(QJsonObject &obj,QTcpSocket* _sock)
@@ -248,11 +312,11 @@ void GameSession::onTimeout()
         almost["cmd"] = "TIMEOUT";
         SendData(almost, _currPlayer.socket);
 
-        almost["cmd"] = "PICKED";
-        almost["username"] = _currPlayer.username;
-        almost["card"] = _drawnCards.back();
-        (*this)(almost);
-        haltDone = false;
+        // almost["cmd"] = "PICKED";
+        // almost["username"] = _currPlayer.username;
+        // almost["card"] = _drawnCards.back();
+        // (*this)(almost);
+        // haltDone = false;
 
         timeoutCnt = 0;
     }
@@ -336,6 +400,7 @@ void GameSession::ResetSession()
     _playersCards.clear();
 
     _timeoutTimer->stop();
+    _pauseTimer->stop();
 }
 
 void GameSession::PickFirstPlayer()
