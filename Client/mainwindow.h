@@ -54,6 +54,6 @@ private:
     void SetupLogRegButton();
     void SetupRegister();
     void SetupLogin();
-    void EmailRegex();
+    void Regex();
 };
 #endif // MAINWINDOW_H

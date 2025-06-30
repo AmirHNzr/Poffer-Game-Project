@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     //Setting up login connections
     SetupLogin();
     //Checking email
-    EmailRegex();
+    Regex();
 
 
 }
@@ -210,11 +210,10 @@ void MainWindow::SetupLogin(){
     });
 }
 
-void MainWindow::EmailRegex()
+void MainWindow::Regex()
 {
     connect(ui->lnEmail, &QLineEdit::editingFinished, this, [this]() {
         const QString text = ui->lnEmail->text();
-        // A tight regex that enforces local@domain.tld, for example:
         static const QRegularExpression re(R"(^[^@\s]+@[^@\s]+\.[^@\s]+$)");
         if (!re.match(text).hasMatch()) {
             QMessageBox::warning(this,
@@ -224,6 +223,59 @@ void MainWindow::EmailRegex()
             ui->lnEmail->setFocus();
         }
     });
+
+    connect(ui->lnFname, &QLineEdit::editingFinished, this, [this]() {
+        const QString text = ui->lnFname->text();
+        static const QRegularExpression nameRegex("^[a-zA-Z][a-zA-Z]*(?: [A-Z][a-zA-Z]*)*$");
+
+        if (!nameRegex.match(text).hasMatch()) {
+            QMessageBox::warning(this,
+                                 tr("Invalid First Name"),
+                                 tr("“%1” is not a valid name.").arg(text));
+            ui->lnFname->clear();
+            ui->lnFname->setFocus();
+        }
+    });
+
+    connect(ui->lnLname, &QLineEdit::editingFinished, this, [this]() {
+        const QString text = ui->lnLname->text();
+        static const QRegularExpression nameRegex("^[a-zA-Z][a-zA-Z]*(?: [A-Z][a-zA-Z]*)*$");
+
+        if (!nameRegex.match(text).hasMatch()) {
+            QMessageBox::warning(this,
+                                 tr("Invalid Last Name"),
+                                 tr("“%1” is not a valid name.").arg(text));
+            ui->lnLname->clear();
+            ui->lnLname->setFocus();
+        }
+    });
+
+    connect(ui->lnUsername, &QLineEdit::editingFinished, this, [this]() {
+        const QString text = ui->lnUsername->text();
+        static const QRegularExpression usernameRegex("^[a-zA-Z][a-zA-Z0-9_]{2,14}$");
+
+        if (!usernameRegex.match(text).hasMatch()) {
+            QMessageBox::warning(this,
+                                 tr("Invalid Username"),
+                                 tr("“%1” is not a valid Username.").arg(text));
+            ui->lnUsername->clear();
+            ui->lnUsername->setFocus();
+        }
+    });
+
+    connect(ui->lnPassword, &QLineEdit::editingFinished, this, [this]() {
+        const QString text = ui->lnPassword->text();
+        static const QRegularExpression strongPasswordRegex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z\\d]).{7,}$");
+        if (!strongPasswordRegex.match(text).hasMatch()) {
+            QMessageBox::warning(this,
+                                 tr("Invalid Password"),
+                                 tr("Passwords should contain at least:\nOne LowerCase and One Uppercase character\n"
+                                    "One special character\nOne digit\nand it should be at least 7 characters"));
+            ui->lnPassword->clear();
+            ui->lnPassword->setFocus();
+        }
+    });
+
 
 }
 
