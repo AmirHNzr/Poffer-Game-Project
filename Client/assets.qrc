@@ -549,5 +549,8 @@
         <file>Images/assets/PauseHover.png</file>
         <file>Images/assets/ResumeDefault.png</file>
         <file>Images/assets/ResumeHover.png</file>
+        <file>Images/assets/HomeDefault.png</file>
+        <file>Images/assets/HomeHover.png</file>
+        <file>Images/assets/hi.res.crt.png</file>
     </qresource>
 </RCC>
