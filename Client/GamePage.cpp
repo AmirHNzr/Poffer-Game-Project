@@ -68,19 +68,7 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
 
     connect(_controller,&UserController::jsonReceived,this,&GamePage::SessionOrders);
 
-    ui->respauseBtn->setFixedHeight(50);
-    ui->respauseBtn->setStyleSheet(R"(
-                                      QPushButton {
-                                        border: none;
-                                        background-image: url(:/Images/assets/PauseDefault.png);
-                                        background-repeat: no-repeat;
-                                        background-position: center;
-                                      }
-                                      QPushButton:pressed {
-                                        background-image: url(:/Images/assets/PauseHover.png);
-                                      }
-                                    )");
-    connect(ui->respauseBtn,&QPushButton::pressed,this,&GamePage::PauseResHandle);
+    SetupButtons();
 
     _pauseTimer = new QTimer(this);
     _pauseTimer->setSingleShot(true);
@@ -89,6 +77,8 @@ GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent
     });
 
     overlay = nullptr;
+
+    SetupReconnection();
 }
 
 GamePage::~GamePage()
@@ -98,6 +88,88 @@ GamePage::~GamePage()
         delete item;
     }
     m_visibleCards.clear();
+}
+
+void GamePage::SetupReconnection(){
+    //set up reconnect logic
+    _isReconnecting = false;
+    _reconnectTimer = new QTimer(this);
+    _reconnectTimer->setSingleShot(true);
+    connect(_reconnectTimer, &QTimer::timeout,
+            this, &GamePage::onReconnectTimeout);
+
+    connect(_controller, &UserController::disconnected,
+            this, &GamePage::onSocketDisconnected);
+    connect(_controller, &UserController::connected,
+            this, &GamePage::onSocketConnected);
+
+    //overlay label for “connection lost”
+    _connOverlayLabel = new QLabel(this);
+    _connOverlayLabel->setStyleSheet(R"(
+      background-color: rgba(0,0,0,180);
+      color: white;
+      font: bold 24px;
+    )");
+    _connOverlayLabel->setAlignment(Qt::AlignCenter);
+    _connOverlayLabel->setText("Connection lost.\nWaiting to reconnect...");
+    _connOverlayLabel->setGeometry(rect());
+    _connOverlayLabel->hide();
+}
+
+void GamePage::onSocketDisconnected()
+{
+    _isReconnecting = true;
+
+    ui->graphicsView->setInteractive(false);
+    for (auto *item : _scene->items())
+        item->setEnabled(false);
+
+    // show “connection lost” overlay
+    _connOverlayLabel->setGeometry(rect());
+    _connOverlayLabel->show();
+
+    _reconnectTimer->start(20'000);
+}
+
+void GamePage::onSocketConnected()
+{
+    if (!_isReconnecting) return;
+    _isReconnecting = false;
+
+    // cancel the “you lost” timer
+    if (_reconnectTimer->isActive())
+        _reconnectTimer->stop();
+
+    // re‐enable the game UI
+    _connOverlayLabel->hide();
+    ui->graphicsView->setInteractive(true);
+    for (auto *item : _scene->items())
+            item->setEnabled(true);
+
+    showFadingMessage("Reconnected!", 500, 1000, 500);
+}
+
+void GamePage::onReconnectTimeout()
+{
+    // still disconnected after 20s → we lose
+    QMessageBox::information(this,tr("Match Result"),
+            tr("Connection could not be re-established.\nYou have lost the match."));
+    accept();
+    deleteLater();
+}
+
+void GamePage::Exit()
+{
+    QMessageBox::information(this,tr("Message"),
+                             tr("You can always start a new match!"));
+
+    QJsonObject obj;
+    obj["cmd"] = "EXIT";
+    obj["username"] = _player->username();
+    _controller->sendJson(obj);
+
+    accept();
+    deleteLater();
 }
 
 void GamePage::ShowCards(int xOffset=100,int yOffset=150)
@@ -221,6 +293,38 @@ void GamePage::showFadingMessage(const QString &text, int fadeInMs, int stayMs, 
     });
 
     m_fadeAnimation->start();
+}
+
+void GamePage::SetupButtons()
+{
+    ui->respauseBtn->setFixedHeight(50);
+    ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/PauseDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/PauseHover.png);
+                                      }
+                                    )");
+    connect(ui->respauseBtn,&QPushButton::pressed,this,&GamePage::PauseResHandle);
+
+    ui->exitBtn->setFixedHeight(50);
+    ui->exitBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/HomeDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/HomeHover.png);
+                                      }
+                                    )");
+    connect(ui->exitBtn,&QPushButton::pressed,this,&GamePage::Exit);
+
 }
 
 void GamePage::resizeEvent(QResizeEvent *event)
@@ -355,6 +459,18 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
     auto cmd = obj["cmd"].toString();
     CardItem* newCard = nullptr;
 
+    if(cmd == "DISCONNECTION"){
+        if(obj["username"] == _player->username())
+            return;
+        Pause(20'000);
+        return;
+    }
+    else if(cmd == "RECONNECTION"){
+        if(obj["username"] == _player->username())
+            return;
+        Resume();
+        return;
+    }
 
     if(cmd != "ALMOST_TIMEOUT" && cmd != "TIMEOUT" && cmd != "PAUSE" && cmd != "RESUME"){
         qDebug() << "checking oldcards in visibles crash";
@@ -424,17 +540,18 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
 
     }
     else if(cmd == "ALMOST_TIMEOUT"){
-        showFadingMessage("10 Seconds remaining...",1000,5000,1000);
+        showFadingMessage("10 Seconds remaining...",1000,1000,1000);
         return;
     }
     else if(cmd == "TIMEOUT"){
-        m_cards.push_back(m_visibleCards.back());
-        m_visibleCards.pop_back();
-        qDebug() << "TIMEOUT crash";
-        for(auto card:m_visibleCards){
-            animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),1000);
+        emit m_visibleCards.back()->doubleClicked(m_visibleCards.back());
+        // m_cards.push_back(m_visibleCards.back());
+        // m_visibleCards.pop_back();
+        // qDebug() << "TIMEOUT crash";
+        // for(auto card:m_visibleCards){
+        //     animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),1000);
 
-        }
+        // }
         return;
     }
     else if(cmd == "ROUND_RESULT"){
@@ -452,6 +569,7 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
                                  tr("Match Result"),
                                  obj["msg"].toString());
         accept();
+        deleteLater();
     }
 
 
@@ -460,7 +578,7 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
 
 }
 
-void GamePage::Pause(){
+void GamePage::Pause(int ms){
     ui->graphicsView->setInteractive(false);
     for (auto *item : _scene->items())
         item->setEnabled(false);
@@ -468,7 +586,7 @@ void GamePage::Pause(){
     overlay = new PauseOverlay(_scene->sceneRect());
     _scene->addItem(overlay);
 
-    _pauseTimer->start(10'000);
+    _pauseTimer->start(ms);
 }
 void GamePage::Resume(){
     ui->graphicsView->setInteractive(true);

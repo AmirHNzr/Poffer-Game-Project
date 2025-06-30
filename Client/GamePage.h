@@ -77,8 +77,15 @@ private:
 
     bool isPaused;
 
-    void Pause();
+    void SetupButtons();
+    void Pause(int ms=10'000);
     void Resume();
+
+    //Reconnection logic
+    QTimer* _reconnectTimer;
+    bool _isReconnecting;
+    QLabel* _connOverlayLabel;
+    void SetupReconnection();
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -97,6 +104,13 @@ private slots:
     void SessionOrders(const QJsonDocument&);
 
     void PauseResHandle();
+
+    //Reconnection handling
+    void onSocketDisconnected();
+    void onSocketConnected();
+    void onReconnectTimeout();
+
+    void Exit();
 };
 
 #endif // GAMEPAGE_H
