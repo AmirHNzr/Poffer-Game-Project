@@ -552,5 +552,11 @@
         <file>Images/assets/HomeDefault.png</file>
         <file>Images/assets/HomeHover.png</file>
         <file>Images/assets/hi.res.crt.png</file>
+        <file>Images/assets/PlayDef.PNG</file>
+        <file>Images/assets/PlayHover.PNG</file>
+        <file>Images/assets/BackHover.PNG</file>
+        <file>Images/assets/BakcDef.PNG</file>
+        <file>Images/assets/hi.res.crt.2.jpg</file>
+        <file>Images/assets/hi.res.crt.3.jpg</file>
     </qresource>
 </RCC>
