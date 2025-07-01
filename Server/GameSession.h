@@ -95,6 +95,7 @@ private:
     void ResetCards();
     void StartGame();
     void ResetSession();
+    void AddHistoryToDB(int w, int l, QString reason="");
 
     void PickFirstPlayer();
     void DrawCards(const int& num);
@@ -122,10 +123,10 @@ private:
     int remainingTimeMs, timeoutCnt;
     void Dealing();
     void SetupTimer(int ms);
+    void onPlayerReconnected();
 private slots:
     void onTimeout();
     void onPlayerDisconnected();
-    void onPlayerReconnected();
 };
 
 #endif // GAMESESSION_H

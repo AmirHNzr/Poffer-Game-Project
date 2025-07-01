@@ -1,6 +1,10 @@
 #include "Users.h"
 
-Users::Users(){}
+Users::Users(){
+    AddUser(User("","",0,"","amir","A6xnQhbz4Vx2HuGl4lXwZ5U2I8iziLRFnhP5eNfIRvQ="));
+    AddUser(User("","",0,"","amiri","A6xnQhbz4Vx2HuGl4lXwZ5U2I8iziLRFnhP5eNfIRvQ="));
+
+}
 
 Users::~Users(){}
 
@@ -47,6 +51,11 @@ bool Users::EditUser(QString oldUsername,User newData)
 QHash<QString, User> *Users::getData()
 {
     return &data;
+}
+
+void Users::AddHistory(QString username,History hist)
+{
+    data[username].AddHistory(hist);
 }
 
 void Users::WriteFile(User u)

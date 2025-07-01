@@ -81,6 +81,11 @@ void User::setHistory(const std::vector<History> &newHistory)
     history = newHistory;
 }
 
+void User::AddHistory(const History h)
+{
+    history.push_back(h);
+}
+
 
 
 

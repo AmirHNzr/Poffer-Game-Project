@@ -14,6 +14,7 @@ struct History
     QString opponent;
     QString result;
     QString rounds[3];
+
     bool operator>(const History& lhs){
         return date > lhs.date;
     }
@@ -65,6 +66,8 @@ public:
     bool operator==(const User&);
     std::vector<History> getHistory() const;
     void setHistory(const std::vector<History> &newHistory);
+
+    void AddHistory(const History);
 
 private:
     QString firstName,lastName;

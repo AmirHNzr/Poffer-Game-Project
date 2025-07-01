@@ -58,15 +58,21 @@ void GameSession::operator()(const QJsonObject &obj)
                     _gm->_sessionPlayers.pop_back();
                 }
 
+
             }
             for (auto entry : _sessionPlayers) {
                 QTcpSocket* sock = entry->socket;
                 connect(sock, &QTcpSocket::disconnected,
                         this, &GameSession::onPlayerDisconnected);
-                connect(sock, &QTcpSocket::readyRead,
-                        this, &GameSession::onPlayerReconnected);
+                entry->hist.date = QDateTime::currentDateTime();
+
             }
-            StartGame();}
+            _sessionPlayers[0]->hist.opponent = _sessionPlayers[1]->username;
+            _sessionPlayers[1]->hist.opponent = _sessionPlayers[0]->username;
+
+            StartGame();
+
+        }
     }
     else if(cmd == "EXIT"){
         if(obj["username"].toString() == _playerOrder[0].username){
@@ -74,6 +80,9 @@ void GameSession::operator()(const QJsonObject &obj)
             exit["cmd"] = "MATCH_RESULT";
             exit["msg"] = "Other player gave up on match and you won";
             SendData(exit,_playerOrder[1].socket);
+
+            AddHistoryToDB(1,0,"by exit");
+
             ResetSession();
             return;
         }
@@ -82,9 +91,15 @@ void GameSession::operator()(const QJsonObject &obj)
             exit["cmd"] = "MATCH_RESULT";
             exit["msg"] = "Other player gave up on match and you won";
             SendData(exit,_playerOrder[0].socket);
+
+            AddHistoryToDB(1,0,"by exit");
+
             ResetSession();
             return;
         }
+    }
+    else if(cmd == "RECONNECTED"){
+        onPlayerReconnected();
     }
     // They have to send username and picked card in order to work correctly
     else if(cmd == "PICKED"){
@@ -128,11 +143,13 @@ void GameSession::operator()(const QJsonObject &obj)
         SendData(pause,_playerOrder[0].socket);
         SendData(pause,_playerOrder[1].socket);
 
+        _timeoutTimer->stop();
         _pause = true;
         _pauseTimer->start(20'000);
 
     }
     else if(cmd == "RESUMED"){
+        _timeoutTimer->start();
         _pauseTimer->stop();
         _pause = false;
 
@@ -150,9 +167,9 @@ void GameSession::onPlayerDisconnected()
 {
     QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
     QString user;
-    if (sock == _playerOrder[0].socket)      user = _playerOrder[0].username;
+    if (sock == _playerOrder[0].socket) user = _playerOrder[0].username;
     else if (sock == _playerOrder[1].socket) user = _playerOrder[1].username;
-    else                                      return;
+    else return;
 
     _pausePlayer = user;
     _pause = true;
@@ -168,19 +185,19 @@ void GameSession::onPlayerDisconnected()
 
 void GameSession::onPlayerReconnected()
 {
-    QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
-    QString user;
-    if (sock == _playerOrder[0].socket) user = _playerOrder[0].username;
-    else if (sock == _playerOrder[1].socket) user = _playerOrder[1].username;
-    else return;
+    // QTcpSocket* sock = qobject_cast<QTcpSocket*>(sender());
+    // QString user;
+    // if (sock == _playerOrder[0].socket) user = _playerOrder[0].username;
+    // else if (sock == _playerOrder[1].socket) user = _playerOrder[1].username;
+    // else return;
 
-    if (!_pause || user != _pausePlayer) return;
+    // if (!_pause || user != _pausePlayer) return;
     _pauseTimer->stop();
     _pause = false;
 
     QJsonObject resumeMsg;
     resumeMsg["cmd"]      = "RECONNECTION";
-    resumeMsg["username"] = user;
+    // resumeMsg["username"] = user;
     SendData(resumeMsg, _playerOrder[0].socket);
     SendData(resumeMsg, _playerOrder[1].socket);
 }
@@ -296,6 +313,8 @@ void GameSession::onTimeout()
         obj["msg"] = "Match ended and you lost";
         SendData(obj,_playerOrder[0].socket);
 
+        AddHistoryToDB(1,0,"by timeout");
+
         _pause = false;
         ResetSession();
         return;
@@ -347,8 +366,20 @@ void GameSession::RoundRes(){
     obj["result"] = result ? "won":"lost";
     SendData(obj,_playerOrder[0].socket);
 
-    result ? _playerOrder[0].wins++ : _playerOrder[1].wins++;
+    //result ? _playerOrder[0].wins++ : _playerOrder[1].wins++;
 
+    if(result){
+        _playerOrder[0].hist.rounds[_gameRound-1] = "won";
+        _playerOrder[1].hist.rounds[_gameRound-1] = "lost";
+
+        _playerOrder[0].wins++;
+    }
+    else{
+        _playerOrder[1].hist.rounds[_gameRound-1] = "won";
+        _playerOrder[0].hist.rounds[_gameRound-1] = "lost";
+
+        _playerOrder[1].wins++;
+    }
 
     // for(auto& card:_playersCards[_playerOrder[1].username])
     //     opponent2.append(card);
@@ -374,14 +405,23 @@ void GameSession::MatchRes(){
         obj["msg"] = "Match ended and you won";
         SendData(obj,_playerOrder[1].socket);
         obj["msg"] = "Match ended and you lost";
-        SendData(obj,_playerOrder[0].socket);}
+        SendData(obj,_playerOrder[0].socket);
+
+
+        AddHistoryToDB(1,0);
+    }
     else if(_playerOrder[0].wins == 2){
         QJsonObject obj;
         obj["cmd"] = "MATCH_RESULT";
         obj["msg"] = "Match ended and you won";
         SendData(obj,_playerOrder[0].socket);
         obj["msg"] = "Match ended and you lost";
-        SendData(obj,_playerOrder[1].socket);}
+        SendData(obj,_playerOrder[1].socket);
+
+
+        AddHistoryToDB(0,1);
+    }
+
 
     ResetSession();
 }
@@ -401,6 +441,14 @@ void GameSession::ResetSession()
 
     _timeoutTimer->stop();
     _pauseTimer->stop();
+}
+
+void GameSession::AddHistoryToDB(int w, int l,QString reason)
+{
+    _playerOrder[w].hist.result = "won "+reason;
+    _playerOrder[l].hist.result = "lost "+reason;
+    _db->AddHistory(_playerOrder[0].username,_playerOrder[0].hist);
+    _db->AddHistory(_playerOrder[1].username,_playerOrder[1].hist);
 }
 
 void GameSession::PickFirstPlayer()

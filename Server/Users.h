@@ -18,7 +18,8 @@ public:
     bool EditUser(QString,User);
     void WriteFile(User u);
     void ReadFile();
-    QHash<QString, User>* getData() ;
+    QHash<QString, User>* getData();
+    void AddHistory(QString username, History hist);
 
 private:
     //i am using Username as the key for each user in this map

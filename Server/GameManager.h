@@ -1,6 +1,7 @@
 #ifndef GAMEMANAGER_H
 #define GAMEMANAGER_H
 
+#include "User.h"
 #include <QObject>
 #include <QTcpSocket>
 #include <QJsonObject>
@@ -13,6 +14,7 @@ struct QueueEntry {
     QString username;
     QTcpSocket* socket;
     int wins;
+    History hist;
 };
 
 class GameManager : public QObject
