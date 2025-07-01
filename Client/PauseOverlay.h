@@ -14,7 +14,7 @@
 
 class PauseOverlay : public QGraphicsRectItem {
 public:
-    PauseOverlay(const QRectF& sceneRect)
+    PauseOverlay(const QRectF& sceneRect, const QString str="Paused")
         : QGraphicsRectItem(sceneRect)
     {
         // Solid black overlay
@@ -28,7 +28,7 @@ public:
         setAcceptedMouseButtons(Qt::AllButtons);
 
         // Create and configure the "Paused" message
-        QGraphicsTextItem* pauseText = new QGraphicsTextItem("Paused", this);
+        QGraphicsTextItem* pauseText = new QGraphicsTextItem(str, this);
         pauseText->setDefaultTextColor(Qt::white);
         QFont font("Arial", 24, QFont::Bold);
         pauseText->setFont(font);

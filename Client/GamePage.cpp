@@ -102,18 +102,6 @@ void GamePage::SetupReconnection(){
             this, &GamePage::onSocketDisconnected);
     connect(_controller, &UserController::connected,
             this, &GamePage::onSocketConnected);
-
-    //overlay label for “connection lost”
-    _connOverlayLabel = new QLabel(this);
-    _connOverlayLabel->setStyleSheet(R"(
-      background-color: rgba(0,0,0,180);
-      color: white;
-      font: bold 24px;
-    )");
-    _connOverlayLabel->setAlignment(Qt::AlignCenter);
-    _connOverlayLabel->setText("Connection lost.\nWaiting to reconnect...");
-    _connOverlayLabel->setGeometry(rect());
-    _connOverlayLabel->hide();
 }
 
 void GamePage::onSocketDisconnected()
@@ -125,8 +113,8 @@ void GamePage::onSocketDisconnected()
         item->setEnabled(false);
 
     // show “connection lost” overlay
-    _connOverlayLabel->setGeometry(rect());
-    _connOverlayLabel->show();
+    overlay = new PauseOverlay(_scene->sceneRect(),"Connection Lost");
+    _scene->addItem(overlay);
 
     _reconnectTimer->start(20'000);
 }
@@ -145,6 +133,14 @@ void GamePage::onSocketConnected()
     ui->graphicsView->setInteractive(true);
     for (auto *item : _scene->items())
             item->setEnabled(true);
+
+    _scene->removeItem(overlay);
+    delete overlay;
+    overlay = nullptr;
+
+    QJsonObject obj;
+    obj["cmd"] = "RECONNECTED";
+    _controller->sendJson(obj);
 
     showFadingMessage("Reconnected!", 500, 1000, 500);
 }
@@ -229,7 +225,9 @@ void GamePage::SetupCardConnections(CardItem* card)
 
 void GamePage::stopAllAnimations()
 {
+    qDebug()<<"Stopping animations";
     for (auto it = m_cardTimelines.begin(); it != m_cardTimelines.end(); ++it) {
+        qDebug()<<"Stopping animations";
         QTimeLine *tl = it.value();
         if (tl->state() == QTimeLine::Running) {
             tl->stop();
@@ -237,6 +235,8 @@ void GamePage::stopAllAnimations()
         tl->deleteLater();
     }
     m_cardTimelines.clear();
+    qDebug()<<"finished animations";
+
 }
 
 void GamePage::SetupFadingMsg()
@@ -483,11 +483,12 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
             if(oldCard->scene() == _scene)
                 _scene->removeItem(oldCard);
             delete oldCard;
+            qDebug() << "delete crash";
         }
         m_visibleCards.clear();
         ShowMainCards(50);
     }
-    qDebug() << "delete crash";
+    qDebug() << "post delete crash";
 
     if(cmd == "PAUSE"){
         if(obj["username"] == _player->username())
@@ -505,17 +506,22 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
 
     if(cmd == "PLAYERS_ORDER"){
 
-        int yours = obj["yours"].toInt();
-        int opponents = obj["opponents"].toInt();
-        newCard = new CardItem(m_facePixmaps[yours-1]);
-        m_visibleCards.push_back(newCard);
-        newCard = new CardItem(m_facePixmaps[opponents-1]);
-        m_visibleCards.push_back(newCard);
-        ShowCards();
-        showFadingMessage("You are "+obj["result"].toString());
-        for(auto card:m_visibleCards){
-            animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),10000);
+        if(obj.contains("yours") && obj.contains("opponents")){
+            int yours = obj["yours"].toInt();
+            int opponents = obj["opponents"].toInt();
+            newCard = new CardItem(m_facePixmaps[yours-1]);
+            m_visibleCards.push_back(newCard);
+            newCard = new CardItem(m_facePixmaps[opponents-1]);
+            m_visibleCards.push_back(newCard);
+            qDebug()<<"CREATED PLAYERS ORDER CARDS CRASH";
+            ShowCards();
+            qDebug()<<"SHOWED PLAYERS ORDER CARDS CRASH";
+            for(auto card:m_visibleCards){
+                animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),10000);
+            }
         }
+        showFadingMessage("You are "+obj["result"].toString());
+
         qDebug() << "order crash";
 
         return;
@@ -579,11 +585,12 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
 }
 
 void GamePage::Pause(int ms){
+    qDebug() << "in pause";
     ui->graphicsView->setInteractive(false);
     for (auto *item : _scene->items())
         item->setEnabled(false);
 
-    overlay = new PauseOverlay(_scene->sceneRect());
+    overlay = new PauseOverlay(_scene->sceneRect(),"Paused");
     _scene->addItem(overlay);
 
     _pauseTimer->start(ms);
