@@ -12,6 +12,7 @@ SOURCES += \
     CardItem.cpp \
     GamePage.cpp \
     History.cpp \
+    HistoryPage.cpp \
     JsonHandler.cpp \
     PlayerInfo.cpp \
     UserController.cpp \
@@ -25,6 +26,7 @@ HEADERS += \
     CardItem.h \
     GamePage.h \
     History.h \
+    HistoryPage.h \
     JsonHandler.h \
     PauseOverlay.h \
     PlayerInfo.h \
@@ -37,6 +39,7 @@ FORMS += \
     GamePage.ui \
     UserPage.ui \
     editprofile.ui \
+    historypage.ui \
     mainwindow.ui
 
 # Default rules for deployment.
@@ -45,5 +48,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 RESOURCES += \
+    Font.qrc \
     assets.qrc \
     images.qrc
