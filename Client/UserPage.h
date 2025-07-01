@@ -5,7 +5,11 @@
 #include"UserController.h"
 #include"PlayerInfo.h"
 #include"editprofile.h"
+#include"HistoryPage.h"
 #include"GamePage.h"
+#include <QLabel>
+#include <QFont>
+#include <QFontDatabase>
 
 namespace Ui {
 class UserPage;
@@ -28,6 +32,9 @@ private slots:
 
     void on_btnStart_clicked();
 
+    void on_btnHistory_clicked();
+
+
     void onGameReady(const QJsonObject &gameInfo);
 
 private:
@@ -35,6 +42,9 @@ private:
     UserController* _controller;
     PlayerInfo* _player;
     EditProfile* _edit;
+    HistoryPage* _hist;
+    QFont _font;
+    void CreateFont();
 };
 
 #endif // USERPAGE_H

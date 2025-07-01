@@ -10,36 +10,85 @@
     <height>556</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>6</width>
+    <height>0</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Dialog</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QDialog {
+    background-image: url(':/Images/assets/hi.res.crt.2.jpg');
+    background-repeat: no-repeat;
+    background-position: center;
+}</string>
   </property>
   <widget class="QPushButton" name="btnExit">
    <property name="geometry">
     <rect>
-     <x>700</x>
+     <x>632</x>
      <y>50</y>
-     <width>83</width>
-     <height>29</height>
+     <width>131</width>
+     <height>81</height>
     </rect>
    </property>
+   <property name="styleSheet">
+    <string notr="true">QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/BakcDef.PNG);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+									    border-radius: 15px; 
+
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/BackHover.PNG);
+                                      }
+
+ </string>
+   </property>
    <property name="text">
-    <string>Exit</string>
+    <string/>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>130</x>
      <y>160</y>
-     <width>85</width>
-     <height>171</height>
+     <width>252</width>
+     <height>224</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QPushButton" name="btnStart">
+      <property name="minimumSize">
+       <size>
+        <width>250</width>
+        <height>80</height>
+       </size>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/PlayDef.PNG);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+										border-radius: 15px; 
+
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/PlayHover.PNG);
+                                      }
+
+ </string>
+      </property>
       <property name="text">
-       <string>Start Game</string>
+       <string/>
       </property>
      </widget>
     </item>
@@ -59,31 +108,31 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QLabel" name="infoLbl">
    <property name="geometry">
     <rect>
-     <x>520</x>
-     <y>330</y>
-     <width>246</width>
-     <height>30</height>
+     <x>440</x>
+     <y>199</y>
+     <width>321</width>
+     <height>31</height>
     </rect>
    </property>
-   <layout class="QHBoxLayout" name="horizontalLayout">
-    <item>
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Available Players:</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QLineEdit" name="lePlayersCount">
-      <property name="readOnly">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-   </layout>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
+  <widget class="QLabel" name="wlcLbl">
+   <property name="geometry">
+    <rect>
+     <x>340</x>
+     <y>70</y>
+     <width>261</width>
+     <height>41</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
   </widget>
  </widget>
  <resources/>

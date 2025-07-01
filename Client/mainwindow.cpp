@@ -115,6 +115,7 @@ void MainWindow::UserErrorOccurred(QAbstractSocket::SocketError error)
 
 
 
+
 void MainWindow::SetupLayout()
 {
     // 1) Grab the “Connection” page

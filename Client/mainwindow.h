@@ -40,6 +40,7 @@ private slots:
     void UserStateChanged(QAbstractSocket::SocketState);
     void UserErrorOccurred(QAbstractSocket::SocketError);
 
+protected:
 
 private:
     Ui::MainWindow *ui;

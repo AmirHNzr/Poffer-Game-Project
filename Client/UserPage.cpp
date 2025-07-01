@@ -9,6 +9,7 @@ UserPage::UserPage(UserController* control,PlayerInfo* p,QWidget *parent)
     _controller = control;
     _player = p;
     _edit = new EditProfile(_controller,_player);
+    _hist = new HistoryPage();
 
     connect(ui->btnHistory, &QPushButton::clicked,
                             this, [=]() {
@@ -18,22 +19,41 @@ UserPage::UserPage(UserController* control,PlayerInfo* p,QWidget *parent)
 
     connect(_controller, &UserController::GameReady,this, &UserPage::onGameReady);
 
+    CreateFont();
+
+
 }
+
 
 UserPage::~UserPage()
 {
     delete ui;
 }
 
+void UserPage::CreateFont(){
+    int fontId = QFontDatabase::addApplicationFont(":/Font/balatro.ttf");
+    QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
+    QFont customFont(family, 16, true);
+    _font = customFont;
+
+}
+
 void UserPage::showEvent(QShowEvent *event)
 {
     QDialog::showEvent(event);
 
+    ui->wlcLbl->setFont(_font);
+    ui->wlcLbl->setText("Welcome "+_player->username());
 }
 
 void UserPage::on_btnExit_clicked()
 {
-    this->close();
+    hist.clear();
+    // this->close();
+    ui->btnStart->setEnabled(true);
+    ui->infoLbl->clear();
+
+    accept();
 }
 
 
@@ -43,6 +63,10 @@ void UserPage::on_btnEdit_clicked()
     _edit->show();
 }
 
+void UserPage::on_btnHistory_clicked()
+{
+    _hist->show();
+}
 
 void UserPage::on_btnStart_clicked()
 {
@@ -60,7 +84,10 @@ void UserPage::on_btnStart_clicked()
 
     // Disable the button. change its text to “Waiting…”
     ui->btnStart->setEnabled(false);
-    ui->btnStart->setText("Waiting for players...");
+    // ui->btnStart->setText("Waiting for players...");
+
+    ui->infoLbl->setFont(_font);
+    ui->infoLbl->setText("Waiting for players...");
 }
 
 void UserPage::onGameReady(const QJsonObject &gameInfo)
@@ -77,7 +104,7 @@ void UserPage::onGameReady(const QJsonObject &gameInfo)
     connect(gp, &QDialog::finished,this, &UserPage::show);
     connect(gp, &QDialog::finished,this, [this](int){
         ui->btnStart->setEnabled(true);
-        ui->btnStart->setText("Start Game");
+        ui->infoLbl->clear();
     });
     gp->setAttribute(Qt::WA_DeleteOnClose);
     gp->show();
