@@ -22,6 +22,7 @@ void MainWindow::on_btnStartServer_clicked()
     if(_svHandler == nullptr){
         _svHandler = new ServerHandler(this,ui->spnPort->value()) ;
         ui->btnStartServer->setText("Stop Server");
+        _svHandler->ReadFile();
 
         connect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
         connect(_svHandler,&ServerHandler::NewDC,this,&MainWindow::NewDC);

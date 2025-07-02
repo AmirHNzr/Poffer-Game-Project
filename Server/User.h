@@ -10,6 +10,16 @@ struct History
 {
     History() {date = QDateTime::currentDateTime();}
 
+    History(QString date,QString opp,QString res,QString r1,QString r2,QString r3){
+        this->date = QDateTime::fromString(date, "yyyy-MM-dd HH:mm:ss");
+        opponent = opp;
+        result = res;
+        rounds[0] = r1;
+        rounds[1] = r2;
+        rounds[2] = r3;
+
+    }
+
     QDateTime date;
     QString opponent;
     QString result;
@@ -43,7 +53,7 @@ class User
 {
 public:
     User();
-    User(QString fName,QString lName,int num,QString mail,QString user,QString pass);
+    User(QString fName,QString lName,QString num,QString mail,QString user,QString pass);
 
     QString getFirstName() const;
     QString getLastName() const;
@@ -51,8 +61,8 @@ public:
     void setFirstName(const QString &newFirstName);
     void setLastName(const QString &newLastName);
 
-    int getPhoneNum() const;
-    void setPhoneNum(int newPhoneNum);
+    QString getPhoneNum() const;
+    void setPhoneNum(QString newPhoneNum);
 
     QString getEMail() const;
     void setEMail(const QString &newEMail);
@@ -71,7 +81,7 @@ public:
 
 private:
     QString firstName,lastName;
-    int phoneNum;
+    QString phoneNum;
     QString eMail;
     QString userName,password;
     std::vector<History> history;

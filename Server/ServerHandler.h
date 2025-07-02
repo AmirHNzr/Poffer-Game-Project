@@ -26,6 +26,8 @@ public:
 
     Users *users();
 
+    void ReadFile();
+
 signals:
     void NewConnection();
     void NewDC();

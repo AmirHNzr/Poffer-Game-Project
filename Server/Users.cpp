@@ -61,7 +61,6 @@ void Users::AddHistory(QString username,History hist)
 void Users::WriteFile(User u)
 {
     QFile file("USERS_DATA.txt");
-    // Open for text‐only, write‐only
     if (!file.open(QIODevice::WriteOnly
                    | QIODevice::Append
                    | QIODevice::Text)) {
@@ -70,7 +69,6 @@ void Users::WriteFile(User u)
     }
 
     QTextStream out(&file);
-    // No need to convert to std::string—QTextStream understands QString
     out << u.getUserName()  << "\n"
         << u.getFirstName() << "\n"
         << u.getLastName()  << "\n"
@@ -78,17 +76,38 @@ void Users::WriteFile(User u)
         << u.getPassword()  << "\n"
         << u.getPhoneNum()  << "\n";
 
-    for (const auto& h : u.getHistory()) {
+    out << "{end}\n";
+
+    QFileInfo info(file);
+    qDebug() << "Absolute path:" << info.absoluteFilePath();
+}
+
+void Users::WriteHistory(QString u){
+    qDebug() << "in write hist;";
+    QFile file(data[u].getUserName()+"-Hist.txt");
+    if (!file.open(QIODevice::WriteOnly
+                   | QIODevice::Truncate
+                   | QIODevice::Text)) {
+        qDebug() << "Couldn't open" << file.errorString();
+        return;
+    }
+
+    QTextStream out(&file);
+
+    out << data[u].getHistory().size();
+    for (const auto& h : data[u].getHistory()) {
         out << h.date.toString()  << "\n"
-            << h.opponent         << "\n"
-            << h.result           << "\n"
-            << h.rounds           << "\n";
+            << h.opponent << "\n"
+            << h.result << "\n"
+        << h.rounds[0] << "\n"
+        << h.rounds[1] << "\n"
+        << h.rounds[2] << "\n";
     }
 
     out << "{end}\n";
 
     QFileInfo info(file);
-    qDebug() << "Absolute path:"     << info.absoluteFilePath();
+    qDebug() << "Absolute path:" << info.absoluteFilePath();
 }
 
 void Users::ReadFile()
@@ -104,7 +123,7 @@ void Users::ReadFile()
     while (true) {
         // 1) Read the six basic user fields
         std::string un, fn, ln, em, ps;
-        int ph;
+        std::string ph;
 
         if (!std::getline(fileIn, un))   break;               // username
         if (un.empty())                  continue;            // skip stray blank lines
@@ -112,8 +131,7 @@ void Users::ReadFile()
         if (!std::getline(fileIn, ln))   break;               // last name
         if (!std::getline(fileIn, em))   break;               // e-mail
         if (!std::getline(fileIn, ps))   break;               // password
-        if (!std::getline(fileIn, line)) break;               // phone as text
-        ph = std::stoi(line);
+        if (!std::getline(fileIn, ph)) break;               // phone as text
 
         // 2) Construct the User object
         User u;
@@ -122,33 +140,59 @@ void Users::ReadFile()
         u.setLastName  (QString::fromStdString(ln));
         u.setEMail     (QString::fromStdString(em));
         u.setPassword  (QString::fromStdString(ps));
-        u.setPhoneNum  (ph);
-
-        // 3) Read zero-or-more history entries until we hit "{end}"
-        while (std::getline(fileIn, line) && line != "{end}") {
-            // 'line' now holds the date-string
-            std::string dateStr = line;
-            std::string opp, res,rounds;
-
-            if (!std::getline(fileIn, opp))  break;
-            if (!std::getline(fileIn, res))  break;
-            if (!std::getline(fileIn, line)) break;
-
-            std::vector<History> h;
-            History h1;
-            h1.date     = QDateTime::fromString(QString::fromStdString(dateStr));  // uses Qt::TextDate by default
-            h1.opponent = QString::fromStdString(opp);
-            h1.result   = QString::fromStdString(res);
-            h.push_back(h1);
-
-            u.setHistory(h);   // or however you append to the user's history list
-        }
+        u.setPhoneNum  (QString::fromStdString(ph));
 
         // 4) Add the populated user to your container
         data.insert(QString::fromStdString(un),u);
+
+        line="";
+        if (std::getline(fileIn,line)){
+            if(line=="{end}")
+                continue;
+            else
+                break;}
+        else
+            break;
     }
 
     fileIn.close();
+}
+
+void Users::ReadHistory(){
+
+    for(auto& user:data){
+
+        std::ifstream fileIn;
+        std::string name = user.getUserName().toStdString()+"-Hist.txt";
+        fileIn.open(name);
+        if(!fileIn.is_open())
+        {
+            qDebug()<<"Couldn't open\n";
+            continue;
+        }
+        int hist;
+        std::string history;
+        std::string date,opp,res,r1,r2,r3;
+
+        if(!std::getline(fileIn,history)) break;
+        hist = std::stoi(history);
+
+        while(hist != 0){
+            if (!std::getline(fileIn, date))   break;
+            if (!std::getline(fileIn, opp))   break;
+            if (!std::getline(fileIn, res))   break;
+            if (!std::getline(fileIn, r1))   break;
+            if (!std::getline(fileIn, r2))   break;
+            if (!std::getline(fileIn, r3)) break;
+
+            user.AddHistory(History(QString::fromStdString(date),QString::fromStdString(opp)
+                                    ,QString::fromStdString(res),QString::fromStdString(r1),
+                                    QString::fromStdString(r2),QString::fromStdString(r3)));
+        }
+
+
+    }
+
 }
 
 

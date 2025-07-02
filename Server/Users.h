@@ -20,6 +20,8 @@ public:
     void ReadFile();
     QHash<QString, User>* getData();
     void AddHistory(QString username, History hist);
+    void WriteHistory(QString u);
+    void ReadHistory();
 
 private:
     //i am using Username as the key for each user in this map

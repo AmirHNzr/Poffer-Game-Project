@@ -82,7 +82,8 @@ void GameSession::operator()(const QJsonObject &obj)
             SendData(exit,_playerOrder[1].socket);
 
             AddHistoryToDB(1,0,"by exit");
-
+            _db->WriteHistory(_playerOrder[0].username);
+            _db->WriteHistory(_playerOrder[1].username);
             ResetSession();
             return;
         }
@@ -93,10 +94,12 @@ void GameSession::operator()(const QJsonObject &obj)
             SendData(exit,_playerOrder[0].socket);
 
             AddHistoryToDB(1,0,"by exit");
-
+            _db->WriteHistory(_playerOrder[0].username);
+            _db->WriteHistory(_playerOrder[1].username);
             ResetSession();
             return;
         }
+
     }
     else if(cmd == "RECONNECTED"){
         onPlayerReconnected();
@@ -355,6 +358,9 @@ void GameSession::onTimeout()
 
         AddHistoryToDB(1,0,"by timeout");
 
+        _db->WriteHistory(_playerOrder[0].username);
+        _db->WriteHistory(_playerOrder[1].username);
+
         _pause = false;
         ResetSession();
         return;
@@ -447,6 +453,8 @@ void GameSession::MatchRes(){
         obj["msg"] = "Match ended and you lost";
         SendData(obj,_playerOrder[0].socket);
 
+        _db->WriteHistory(_playerOrder[0].username);
+        _db->WriteHistory(_playerOrder[1].username);
 
         AddHistoryToDB(1,0);
     }
@@ -458,6 +466,8 @@ void GameSession::MatchRes(){
         obj["msg"] = "Match ended and you lost";
         SendData(obj,_playerOrder[1].socket);
 
+        _db->WriteHistory(_playerOrder[0].username);
+        _db->WriteHistory(_playerOrder[1].username);
 
         AddHistoryToDB(0,1);
     }

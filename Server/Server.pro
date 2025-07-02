@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     EditCommand.cpp \
+    ForgotCommand.cpp \
     GameManager.cpp \
     GameSession.cpp \
     GetHistoryCommand.cpp \
@@ -25,6 +26,7 @@ SOURCES += \
 
 HEADERS += \
     EditCommand.h \
+    ForgotCommand.h \
     GameManager.h \
     GameSession.h \
     GetHistoryCommand.h \

@@ -149,6 +149,12 @@ Users *ServerHandler::users()
     return _users;
 }
 
+void ServerHandler::ReadFile()
+{
+    _users->ReadFile();
+    _users->ReadHistory();
+}
+
 QJsonObject ServerHandler::getReceivedData() const
 {
     return receivedData;

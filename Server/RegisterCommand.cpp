@@ -8,7 +8,7 @@ void RegisterCommand::Execute(const QJsonObject &payload)
 {
     QString fn = payload.value("firstname").toString();
     QString ln = payload.value("lastname").toString();
-    int num = payload.value("number").toString().toInt();
+    QString num = payload.value("number").toString();
     QString em = payload.value("email").toString();
     QString un = payload.value("username").toString();
     QString p = payload.value("password").toString();

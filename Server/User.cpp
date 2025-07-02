@@ -2,8 +2,8 @@
 
 User::User():User("","",0,"","",""){}
 
-User::User(QString fName, QString lName,int num,
-           QString mail,QString user, QString pass):firstName{fName},lastName{lName}
+User::User(QString fName, QString lName, QString num,
+           QString mail, QString user, QString pass):firstName{fName},lastName{lName}
                                                     ,phoneNum{num},eMail{mail},userName{user},password{pass}{}
 
 QString User::getFirstName() const
@@ -26,12 +26,12 @@ void User::setLastName(const QString &newLastName)
     lastName = newLastName;
 }
 
-int User::getPhoneNum() const
+QString User::getPhoneNum() const
 {
     return phoneNum;
 }
 
-void User::setPhoneNum(int newPhoneNum)
+void User::setPhoneNum(QString newPhoneNum)
 {
     phoneNum = newPhoneNum;
 }
