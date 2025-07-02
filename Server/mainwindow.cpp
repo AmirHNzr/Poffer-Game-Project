@@ -27,6 +27,9 @@ void MainWindow::on_btnStartServer_clicked()
         connect(_svHandler,&ServerHandler::NewDC,this,&MainWindow::NewDC);
         connect(_svHandler,&ServerHandler::NewDataSent,this,&MainWindow::NewDataSent);
 
+        QString ip = findLocalIP();
+        ui->ipLbl->setText("IP:"+ip);
+
     }
     else{
         disconnect(_svHandler,&ServerHandler::NewConnection,this,&MainWindow::NewConnection);
@@ -37,6 +40,7 @@ void MainWindow::on_btnStartServer_clicked()
 
         _svHandler->deleteLater();
         _svHandler = nullptr;
+        ui->ipLbl->clear();
     }
 }
 
@@ -55,5 +59,20 @@ void MainWindow::NewDC(){
 void MainWindow::NewDataSent(){
     ui->teServer->append("a data sent to client\n");
 
+}
+
+QString MainWindow::findLocalIP() const
+{
+    //Iterate all interfaces
+    for (const QNetworkInterface &iface : QNetworkInterface::allInterfaces()) {
+        if (iface.humanReadableName() != QStringLiteral("Wi-Fi")) continue;
+
+        for (const QNetworkAddressEntry &entry : iface.addressEntries()) {
+            QHostAddress ip = entry.ip();
+            if (ip.protocol() == QAbstractSocket::IPv4Protocol && !ip.isLoopback())
+                return ip.toString();
+        }
+    }
+    return QStringLiteral("127.0.0.1");
 }
 

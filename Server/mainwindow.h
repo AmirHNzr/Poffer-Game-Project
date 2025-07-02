@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include "ServerHandler.h"
+#include <QNetworkInterface>
+#include <QHostAddress>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -24,6 +26,8 @@ private slots:
     void NewDC();
     void NewDataSent();
 private:
+    QString findLocalIP() const;
+
     Ui::MainWindow *ui;
     ServerHandler* _svHandler;
     static int connectionsCount;
