@@ -20,7 +20,7 @@ UserController::UserController(QObject *parent)
                 emit GameReady(gameInfo);
             });
 
-    //Game session connections
+    connect(&_jsonHandler,&JsonHandler::HistReady,this, &UserController::HistReady);
 
 
 
@@ -193,3 +193,16 @@ void UserController::OnReadyRead()
     }
 }
 
+void UserController::ForgetPass(QString user,QString phone){
+    if(_socket.isOpen()){
+        QJsonObject req {
+            { "cmd",      "FORGOT"        },
+            { "username", user          },
+            { "phone", phone        }
+        };
+        sendJson(req);
+    }
+    else{
+        QMessageBox::warning(nullptr,"Connection Error","You are not connected to the server");
+    }
+}

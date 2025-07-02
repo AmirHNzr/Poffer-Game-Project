@@ -38,6 +38,7 @@ public slots:
     void EditProfile(const QString&, const QString &firstname, const QString &lastname,
                      const QString &number, const QString &email, const QString &username2,
                      const QString &password);
+    void ForgetPass(QString user, QString phone);
 signals:
     void connected();
     void disconnected();
@@ -48,6 +49,8 @@ signals:
     void EditPermission();
 
     void GameReady(const QJsonObject &gameInfo);
+
+    void HistReady();
 
 
 

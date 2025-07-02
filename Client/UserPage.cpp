@@ -18,6 +18,7 @@ UserPage::UserPage(UserController* control,PlayerInfo* p,QWidget *parent)
                             });
 
     connect(_controller, &UserController::GameReady,this, &UserPage::onGameReady);
+    connect(_controller, &UserController::HistReady,this, [this](){_hist->show();});
 
     CreateFont();
 
@@ -61,11 +62,6 @@ void UserPage::on_btnExit_clicked()
 void UserPage::on_btnEdit_clicked()
 {
     _edit->show();
-}
-
-void UserPage::on_btnHistory_clicked()
-{
-    _hist->show();
 }
 
 void UserPage::on_btnStart_clicked()

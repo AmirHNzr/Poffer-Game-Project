@@ -8,7 +8,6 @@ HistoryPage::HistoryPage(QWidget *parent)
     ui->setupUi(this);
     count = 0;
     CreateFont();
-    ui->groupBox->setFont(_font);
     LoadHist();
 }
 
@@ -73,5 +72,23 @@ void HistoryPage::CreateFont(){
     QString family = QFontDatabase::applicationFontFamilies(fontId).at(0);
     QFont customFont(family, 16, true);
     _font = customFont;
+
+    ui->groupBox->setFont(_font);
+
+    ui->lnDate1->setFont(_font);
+    ui->lnDate2->setFont(_font);
+    ui->lnDate3->setFont(_font);
+
+    ui->lnOpp1->setFont(_font);
+    ui->lnOpp2->setFont(_font);
+    ui->lnOpp3->setFont(_font);
+
+    ui->lnRes1->setFont(_font);
+    ui->lnRes2->setFont(_font);
+    ui->lnRes3->setFont(_font);
+
+    ui->lnRnd1->setFont(_font);
+    ui->lnRnd2->setFont(_font);
+    ui->lnRnd3->setFont(_font);
 
 }

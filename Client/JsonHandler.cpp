@@ -42,6 +42,7 @@ void JsonHandler::JsonReceived(QJsonDocument doc)
             hist.push_back(History(d,opp,res,rounds));
             qDebug() << "HISTORY PUSHED";
         }
+        emit HistReady();
 
     }
 

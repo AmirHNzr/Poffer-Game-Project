@@ -32,9 +32,6 @@ private slots:
 
     void on_btnStart_clicked();
 
-    void on_btnHistory_clicked();
-
-
     void onGameReady(const QJsonObject &gameInfo);
 
 private:
