@@ -24,6 +24,7 @@ private:
     Ui::EditProfile *ui;
     UserController* _controller;
     PlayerInfo* _player;
+    void Regex();
 };
 
 #endif // EDITPROFILE_H
