@@ -21,6 +21,8 @@ public:
 
     bool operator==(const CardItem& lhs);
 
+    void setFace(const QPixmap &newFace);
+
 signals:
     void doubleClicked(CardItem* self);
 

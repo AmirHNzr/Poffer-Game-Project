@@ -21,8 +21,8 @@
 }</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="0">
-    <widget class="QPushButton" name="exitBtn">
+   <item row="1" column="0">
+    <widget class="QPushButton" name="cardBtn">
      <property name="maximumSize">
       <size>
        <width>100</width>
@@ -37,7 +37,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
+   <item row="5" column="0">
     <widget class="QGraphicsView" name="graphicsView">
      <property name="styleSheet">
       <string notr="true">QGraphicsView#graphicsView {
@@ -47,8 +47,24 @@
      </property>
     </widget>
    </item>
-   <item row="1" column="0">
+   <item row="3" column="0">
     <widget class="QPushButton" name="respauseBtn">
+     <property name="maximumSize">
+      <size>
+       <width>100</width>
+       <height>50</height>
+      </size>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LayoutDirection::RightToLeft</enum>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QPushButton" name="exitBtn">
      <property name="maximumSize">
       <size>
        <width>100</width>

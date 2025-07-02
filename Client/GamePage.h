@@ -16,6 +16,7 @@
 #include <QTimer>
 #include"ButtonItem.h"
 #include"PauseOverlay.h"
+#include <QInputDialog>
 
 
 namespace Ui {
@@ -86,6 +87,9 @@ private:
     bool _isReconnecting;
     QLabel* _connOverlayLabel;
     void SetupReconnection();
+
+    QMessageBox* msgBox;
+    int changeIndex;
 protected:
     void resizeEvent(QResizeEvent *event) override;
     void showEvent(QShowEvent *event) override;
@@ -111,6 +115,7 @@ private slots:
     void onReconnectTimeout();
 
     void Exit();
+    void ChangeCards();
 };
 
 #endif // GAMEPAGE_H

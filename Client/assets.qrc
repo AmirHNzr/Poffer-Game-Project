@@ -558,5 +558,6 @@
         <file>Images/assets/BakcDef.PNG</file>
         <file>Images/assets/hi.res.crt.2.jpg</file>
         <file>Images/assets/hi.res.crt.3.jpg</file>
+        <file>Images/assets/ChangeDefault.png</file>
     </qresource>
 </RCC>

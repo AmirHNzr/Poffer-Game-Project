@@ -325,6 +325,36 @@ void GamePage::SetupButtons()
                                     )");
     connect(ui->exitBtn,&QPushButton::pressed,this,&GamePage::Exit);
 
+    ui->cardBtn->setFixedHeight(50);
+    ui->cardBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/ChangeDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/ChangeDefault.png);
+                                      }
+                                    )");
+    connect(ui->cardBtn,&QPushButton::pressed,this,&GamePage::ChangeCards);
+
+
+    msgBox = new QMessageBox(QMessageBox::Question,tr("Confirmation"),
+                                tr("Do you want to change cards?"),
+                                QMessageBox::Yes | QMessageBox::No,
+                                this);
+    msgBox->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(msgBox, &QMessageBox::finished, this,
+            [this](int result){
+                if (result == QMessageBox::Yes) {
+                    QJsonObject obj;
+                    obj["cmd"] = "CHANGE_REQ_ACCEPTED";
+                    _controller->sendJson(obj);
+                }
+            });
+
 }
 
 void GamePage::resizeEvent(QResizeEvent *event)
@@ -470,6 +500,57 @@ void GamePage::SessionOrders(const QJsonDocument &doc)
             return;
         Resume();
         return;
+    }
+    else if(cmd == "CHANGE_REQ_RECEIVED"){
+
+        // Show the message box and get the user's response
+        // int ret = msgBox->exec();
+        // if(ret != QMessageBox::Yes) return;
+        // QJsonObject obj;
+        // obj["cmd"] = "CHANGE_REQ_ACCEPTED";
+        // _controller->sendJson(obj);
+        msgBox->open();
+        return;
+
+    }
+    else if(cmd == "CHANGE_ACCEPTED"){
+
+        ui->cardBtn->setEnabled(false);
+        bool ok;
+        int value = QInputDialog::getInt(
+            this,
+            tr("Enter Which one"),
+            tr("Please enter number of card you want to change\n(starting from left to right)"),
+            1, //default
+            1, //min
+            m_cards.size(), //max
+            1, //step
+            &ok
+            );
+
+        if (!ok) return;
+
+        QJsonObject obj;
+        obj["cmd"] = "CHANGE_RECEIVED";
+        obj["username"] = _player->username();
+        obj["index"] = value - 1;
+        _controller->sendJson(obj);
+
+        changeIndex = value-1;
+        return;
+
+
+    }
+    else if(cmd == "CHANGE_DONE"){
+        ui->cardBtn->setEnabled(true);
+        int card = obj["card"].toInt();
+        newCard = new CardItem(m_facePixmaps[card-1]);
+        auto addr =  m_cards[changeIndex];
+        m_cards[changeIndex] = newCard;
+        delete addr;
+        ShowMainCards(50);
+        return;
+
     }
 
     if(cmd != "ALMOST_TIMEOUT" && cmd != "TIMEOUT" && cmd != "PAUSE" && cmd != "RESUME"){
@@ -657,7 +738,15 @@ void GamePage::PauseResHandle()
 
 }
 
+void GamePage::ChangeCards(){
 
+    qDebug() << "in change cards";
+    QJsonObject obj;
+    obj["cmd"] = "CHANGE_REQ";
+    obj["username"] = _player->username();
+    _controller->sendJson(obj);
+
+}
 
 
 

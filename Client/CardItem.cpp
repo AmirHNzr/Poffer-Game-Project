@@ -17,6 +17,11 @@ void CardItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
     QGraphicsPixmapItem::mouseDoubleClickEvent(event);
 }
 
+void CardItem::setFace(const QPixmap &newFace)
+{
+    m_face = newFace;
+}
+
 int CardItem::getNum() const
 {
     return num;
