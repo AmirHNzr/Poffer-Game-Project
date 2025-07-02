@@ -1,0 +1,754 @@
+#include "GamePage.h"
+#include "ui_GamePage.h"
+
+static constexpr const char* RANK_NAMES[13] = {
+    "2", "3", "4", "5", "6", "7",
+    "8", "9", "10", "Soldier", "Queen", "King", "Bitcoin"
+};
+
+static constexpr const char* SUIT_NAMES[4] = {
+    "Coin", "Dollar", "Gold", "Diamond"
+};
+
+inline void decodeCardIndex(int n, int& suitIndex, int& rankIndex) {
+    //sanity check
+    if (n < 1 || n > 52) {
+        suitIndex = -1;
+        rankIndex = -1;
+        return;
+    }
+    int zeroBased = n - 1;
+    suitIndex = zeroBased / 13;   // 0=coin,1=dollar,2=gold,3=diamonds
+    rankIndex = zeroBased % 13;
+}
+
+GamePage::GamePage(UserController* c,PlayerInfo* p,QJsonArray ps,QWidget *parent)
+    : QDialog(parent)
+    , ui(new Ui::GamePage)
+    , _player(p)
+    , _players(ps)
+    , _controller(c)
+    , _pause{2}
+    , _scene(new QGraphicsScene(this))
+    , isPaused{false}
+{
+    ui->setupUi(this);
+    ui->graphicsView->setScene(_scene);
+    SetupFadingMsg();
+
+    if(_players.first() == _player->username())
+        opponent = _players.last().toString();
+    opponent = _players.first().toString();
+
+    m_cards.clear();
+    m_visibleCards.clear();
+
+    QSize targetSize(100, 100);
+    //Preload all 52 face‐side pixmaps into m_facePixmaps
+    for (int i = 0; i < 52; ++i) {
+        int n = i + 1;
+        int suitIdx, rankIdx;
+        decodeCardIndex(n, suitIdx, rankIdx);
+
+        // Build a resource path like ":/cards/Coin-2.JPG"
+        QString path = QString(":/Images/cards/%1-%2.JPG")
+                           .arg(SUIT_NAMES[suitIdx])
+                            .arg(RANK_NAMES[rankIdx]);
+
+        QPixmap px;
+        if (!px.load(path)) {
+            qWarning() << "Could not load card image at" << path;
+        }
+        px = px.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        qDebug() << "card:"<< n<<"<><><><>px cahce:"<<px.cacheKey();
+        m_facePixmaps[i] = px;
+    }
+
+    ui->graphicsView->setRenderHint(QPainter::Antialiasing);
+
+    connect(_controller,&UserController::jsonReceived,this,&GamePage::SessionOrders);
+
+    SetupButtons();
+
+    _pauseTimer = new QTimer(this);
+    _pauseTimer->setSingleShot(true);
+    connect(_pauseTimer, &QTimer::timeout,this, [this](){
+        showFadingMessage("10 Seconds of pause remains...",1000,2000,1000);
+    });
+
+    overlay = nullptr;
+
+    SetupReconnection();
+}
+
+GamePage::~GamePage()
+{
+    delete ui;
+    for (auto item : m_visibleCards) {
+        delete item;
+    }
+    m_visibleCards.clear();
+}
+
+void GamePage::SetupReconnection(){
+    //set up reconnect logic
+    _isReconnecting = false;
+    _reconnectTimer = new QTimer(this);
+    _reconnectTimer->setSingleShot(true);
+    connect(_reconnectTimer, &QTimer::timeout,
+            this, &GamePage::onReconnectTimeout);
+
+    connect(_controller, &UserController::disconnected,
+            this, &GamePage::onSocketDisconnected);
+    connect(_controller, &UserController::connected,
+            this, &GamePage::onSocketConnected);
+}
+
+void GamePage::onSocketDisconnected()
+{
+    _isReconnecting = true;
+
+    ui->graphicsView->setInteractive(false);
+    for (auto *item : _scene->items())
+        item->setEnabled(false);
+
+    // show “connection lost” overlay
+    overlay = new PauseOverlay(_scene->sceneRect(),"Connection Lost");
+    _scene->addItem(overlay);
+
+    _reconnectTimer->start(20'000);
+}
+
+void GamePage::onSocketConnected()
+{
+    if (!_isReconnecting) return;
+    _isReconnecting = false;
+
+    // cancel the “you lost” timer
+    if (_reconnectTimer->isActive())
+        _reconnectTimer->stop();
+
+    // re‐enable the game UI
+    _connOverlayLabel->hide();
+    ui->graphicsView->setInteractive(true);
+    for (auto *item : _scene->items())
+            item->setEnabled(true);
+
+    _scene->removeItem(overlay);
+    delete overlay;
+    overlay = nullptr;
+
+    QJsonObject obj;
+    obj["cmd"] = "RECONNECTED";
+    _controller->sendJson(obj);
+
+    showFadingMessage("Reconnected!", 500, 1000, 500);
+}
+
+void GamePage::onReconnectTimeout()
+{
+    // still disconnected after 20s → we lose
+    QMessageBox::information(this,tr("Match Result"),
+            tr("Connection could not be re-established.\nYou have lost the match."));
+    accept();
+    deleteLater();
+}
+
+void GamePage::Exit()
+{
+    QMessageBox::information(this,tr("Message"),
+                             tr("You can always start a new match!"));
+
+    QJsonObject obj;
+    obj["cmd"] = "EXIT";
+    obj["username"] = _player->username();
+    _controller->sendJson(obj);
+
+    accept();
+    deleteLater();
+}
+
+void GamePage::ShowCards(int xOffset=100,int yOffset=150)
+{
+    int x=-200;
+    int y=-200;
+    for(auto& card:m_visibleCards){
+        if (card->scene() == _scene) {
+            _scene->removeItem(card);
+        }
+        qDebug() << "<> Showing:" << card->getNum() << "<> pixmap:" << card->pixmap().cacheKey();
+        card->setPos(x,y);
+        _scene->addItem(card);
+        x+=xOffset;
+        y-=yOffset;
+    }
+}
+
+void GamePage::ShowMainCards(int xOffset)
+{
+    if(m_cards.empty()) return;
+    int x=-100;
+    int y=100;
+    qDebug() << "show main crash";
+    for(auto& card:m_cards){
+        if (m_cardTimelines.contains(card)) {
+            QTimeLine* oldTl = m_cardTimelines.value(card);
+            if (oldTl->state() == QTimeLine::Running)
+                oldTl->stop();
+            oldTl->deleteLater();
+            m_cardTimelines.remove(card);
+        }
+
+        if (card->scene() == _scene) {
+            // If it’s already in the scene at some old position, remove it:
+            _scene->removeItem(card);
+        }
+        card->setPos(x,y);
+        _scene->addItem(card);
+        x+=xOffset;
+    }
+}
+
+void GamePage::SetupCardConnections(CardItem* card)
+{
+    connect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+    connect(card, &CardItem::doubleClicked, this,  [this,card](){
+        QJsonObject obj;
+        obj["cmd"] = "PICKED";
+        obj["username"] = _player->username();
+        obj["card"] = card->getNum();
+        qDebug() << "++++++Num in connection:" << card->getNum();
+        _controller->sendJson(obj);
+    });
+
+}
+
+void GamePage::stopAllAnimations()
+{
+    qDebug()<<"Stopping animations";
+    for (auto it = m_cardTimelines.begin(); it != m_cardTimelines.end(); ++it) {
+        qDebug()<<"Stopping animations";
+        QTimeLine *tl = it.value();
+        if (tl->state() == QTimeLine::Running) {
+            tl->stop();
+        }
+        tl->deleteLater();
+    }
+    m_cardTimelines.clear();
+    qDebug()<<"finished animations";
+
+}
+
+void GamePage::SetupFadingMsg()
+{
+    m_overlayLabel = new QLabel(this);
+    m_opacityEffect = new QGraphicsOpacityEffect(this);
+    m_fadeAnimation = new QPropertyAnimation(m_opacityEffect, "opacity", this);
+
+    m_overlayLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+    m_overlayLabel->setAlignment(Qt::AlignCenter);
+    m_overlayLabel->setStyleSheet(R"(
+        background-color: rgba(0, 0, 0, 128); /* semi-transparent black */
+        color: white;
+        font: bold 36px;
+    )");
+    m_overlayLabel->setGraphicsEffect(m_opacityEffect);
+
+    // Make sure the label covers the entire client area:
+    m_overlayLabel->setGeometry(rect());
+    m_overlayLabel->hide();
+
+}
+
+void GamePage::showFadingMessage(const QString &text, int fadeInMs, int stayMs, int fadeOutMs)
+{
+    //Set the text:
+    m_overlayLabel->setText(text);
+    m_overlayLabel->raise();
+    m_overlayLabel->show();
+
+    //fade in 0 -> 1
+    m_fadeAnimation->stop();
+    m_fadeAnimation->setDuration(fadeInMs);
+    m_fadeAnimation->setStartValue(0.0);
+    m_fadeAnimation->setEndValue(1.0);
+
+    //After fade in, wait for stayMs, then fade out:
+    connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [=]() {
+        //halt for stayMs, then fade out:
+        QTimer::singleShot(stayMs, this, [=]() {
+            //fade 1 -> 0:
+            m_fadeAnimation->disconnect(); // disconnect old finished() slot
+            m_fadeAnimation->setDuration(fadeOutMs);
+            m_fadeAnimation->setStartValue(1.0);
+            m_fadeAnimation->setEndValue(0.0);
+
+            connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [=]() {
+                //after fade out, hide the label
+                m_overlayLabel->hide();
+                m_fadeAnimation->disconnect();
+            });
+            m_fadeAnimation->start();
+        });
+    });
+
+    m_fadeAnimation->start();
+}
+
+void GamePage::SetupButtons()
+{
+    ui->respauseBtn->setFixedHeight(50);
+    ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/PauseDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/PauseHover.png);
+                                      }
+                                    )");
+    connect(ui->respauseBtn,&QPushButton::pressed,this,&GamePage::PauseResHandle);
+
+    ui->exitBtn->setFixedHeight(50);
+    ui->exitBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/HomeDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/HomeHover.png);
+                                      }
+                                    )");
+    connect(ui->exitBtn,&QPushButton::pressed,this,&GamePage::Exit);
+
+    ui->cardBtn->setFixedHeight(50);
+    ui->cardBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/ChangeDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/ChangeDefault.png);
+                                      }
+                                    )");
+    connect(ui->cardBtn,&QPushButton::pressed,this,&GamePage::ChangeCards);
+
+
+    msgBox = new QMessageBox(QMessageBox::Question,tr("Confirmation"),
+                                tr("Do you want to change cards?"),
+                                QMessageBox::Yes | QMessageBox::No,
+                                this);
+    msgBox->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(msgBox, &QMessageBox::finished, this,
+            [this](int result){
+                if (result == QMessageBox::Yes) {
+                    QJsonObject obj;
+                    obj["cmd"] = "CHANGE_REQ_ACCEPTED";
+                    _controller->sendJson(obj);
+                }
+            });
+
+}
+
+void GamePage::resizeEvent(QResizeEvent *event)
+{
+    QDialog::resizeEvent(event);
+
+    //Resize sceneRect(0,0)→(viewportWidth, viewportHeight)
+    const QSize vp = ui->graphicsView->viewport()->size();
+    _scene->setSceneRect(0, 0, vp.width(), vp.height());
+    // In showEvent or resizeEvent, add:
+    qDebug() << "GraphicsView viewport size:" << ui->graphicsView->viewport()->size();
+    qDebug() << "Scene rect:" << _scene->sceneRect();
+}
+
+void GamePage::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent(event);
+
+    //we have to send an "GAME_STARTED" json;
+    QJsonObject obj;
+    obj["cmd"] = "GAME_STARTED";
+    _controller->sendJson(obj);
+
+}
+
+void GamePage::onCardClicked(CardItem *card)
+{
+    QPointF start = card->pos();
+    QPointF end = QPointF(start.x(), -50);
+    animateDeal(card, start, end);
+}
+
+void GamePage::CardSelected(CardItem *card)
+{
+    qDebug() << "++++++Num in selected:" << card->getNum();
+    QPointF start;
+    QPointF end;
+    if(!m_cards.empty()){
+    auto lastCard = m_cards.back();
+    start = card->pos();
+    end = QPointF(lastCard->x()+50, 100);
+    m_cards.push_back(card);
+    }
+    else{
+        m_cards.push_back(card);
+        start = card->pos();
+        end = QPointF(0, 100);
+    }
+    auto itr = std::find(m_visibleCards.begin(),m_visibleCards.end(),card);
+    if(itr == m_visibleCards.end()){
+        qDebug() << "Reached end of visible cards---------";
+    }
+
+    if (m_cardTimelines.contains(card)) {
+        qDebug() << "deleting animation";
+
+        QTimeLine* oldTl = m_cardTimelines.value(card);
+        if (oldTl->state() == QTimeLine::Running)
+            oldTl->stop();
+        oldTl->deleteLater();
+        m_cardTimelines.remove(card);
+    }
+
+    qDebug() << "removing items form the scene";
+    _scene->removeItem(card); //potential pitfall
+    m_cards.back()->setPos(start);
+    _scene->addItem(m_cards.back());
+    animateDeal(m_cards.back(), start, end);
+
+    for(auto card:m_visibleCards){
+        if (m_cardTimelines.contains(card)) {
+            QTimeLine* oldTl = m_cardTimelines.value(card);
+            if (oldTl->state() == QTimeLine::Running)
+                oldTl->stop();
+            oldTl->deleteLater();
+            m_cardTimelines.remove(card);
+        }
+        if(std::find(m_cards.begin(),m_cards.end(),card) != m_cards.end()) continue;
+        animateDeal(card,card->pos(),QPointF(card->pos().x(),10000),10000);
+        card->setFlag(QGraphicsItem::ItemIsSelectable, false);
+        card->disconnect(card, &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+        //_scene->removeItem(card);
+    }
+    m_cards.back()->setFlag(QGraphicsItem::ItemIsSelectable, false);
+    m_cards.back()->disconnect(m_cards.back(), &CardItem::doubleClicked, this,  &GamePage::CardSelected);
+    qDebug() << "end of card select but after show main crash";
+
+    ShowMainCards(50);
+}
+
+void GamePage::animateDeal(CardItem *card, const QPointF &startPos, const QPointF &endPos,const int& Time)
+{
+    QTimeLine *timeLine = new QTimeLine(Time, this); //250 ms
+    timeLine->setFrameRange(0, 100);
+
+    QGraphicsItemAnimation *animation = new QGraphicsItemAnimation;
+    animation->setItem(card);
+    animation->setTimeLine(timeLine);
+
+    // Interpolate from startPos -> endPos over 0..100
+    for (int i = 0; i <= 100; ++i) {
+        qreal t = i / 100.0;
+        QPointF pos = startPos * (1.0 - t) + endPos * t;
+        animation->setPosAt(i / 100.0, pos);
+    }
+    qDebug() << "animation crash";
+
+    connect(timeLine, &QTimeLine::finished, this,[timeLine, animation]() {
+        //Clean up when done
+        animation->deleteLater();
+        timeLine->deleteLater();
+    });
+
+    m_cardTimelines[card] = timeLine;
+
+    connect(timeLine, &QTimeLine::finished, this, [this, timeLine, animation, card]() {
+        animation->deleteLater();
+        timeLine->deleteLater();
+        // As soon as this timeline is done, erase it from the map
+        m_cardTimelines.remove(card);
+    });
+    timeLine->start();
+
+}
+
+void GamePage::SessionOrders(const QJsonDocument &doc)
+{
+    qDebug() << "session";
+    stopAllAnimations();
+
+    QJsonObject obj = doc.object();
+    auto cmd = obj["cmd"].toString();
+    CardItem* newCard = nullptr;
+
+    if(cmd == "DISCONNECTION"){
+        if(obj["username"] == _player->username())
+            return;
+        Pause(20'000);
+        return;
+    }
+    else if(cmd == "RECONNECTION"){
+        if(obj["username"] == _player->username())
+            return;
+        Resume();
+        return;
+    }
+    else if(cmd == "CHANGE_REQ_RECEIVED"){
+
+        // Show the message box and get the user's response
+        // int ret = msgBox->exec();
+        // if(ret != QMessageBox::Yes) return;
+        // QJsonObject obj;
+        // obj["cmd"] = "CHANGE_REQ_ACCEPTED";
+        // _controller->sendJson(obj);
+        msgBox->open();
+        return;
+
+    }
+    else if(cmd == "CHANGE_ACCEPTED"){
+
+        ui->cardBtn->setEnabled(false);
+        bool ok;
+        int value = QInputDialog::getInt(
+            this,
+            tr("Enter Which one"),
+            tr("Please enter number of card you want to change\n(starting from left to right)"),
+            1, //default
+            1, //min
+            m_cards.size(), //max
+            1, //step
+            &ok
+            );
+
+        if (!ok) return;
+
+        QJsonObject obj;
+        obj["cmd"] = "CHANGE_RECEIVED";
+        obj["username"] = _player->username();
+        obj["index"] = value - 1;
+        _controller->sendJson(obj);
+
+        changeIndex = value-1;
+        return;
+
+
+    }
+    else if(cmd == "CHANGE_DONE"){
+        ui->cardBtn->setEnabled(true);
+        int card = obj["card"].toInt();
+        newCard = new CardItem(m_facePixmaps[card-1]);
+        auto addr =  m_cards[changeIndex];
+        m_cards[changeIndex] = newCard;
+        delete addr;
+        ShowMainCards(50);
+        return;
+
+    }
+
+    if(cmd != "ALMOST_TIMEOUT" && cmd != "TIMEOUT" && cmd != "PAUSE" && cmd != "RESUME"){
+        qDebug() << "checking oldcards in visibles crash";
+
+
+
+        for (CardItem* oldCard : m_visibleCards) {
+            if(std::find(m_cards.begin(),m_cards.end(),oldCard) != m_cards.end()){
+                continue;}
+            if(oldCard->scene() == _scene)
+                _scene->removeItem(oldCard);
+            delete oldCard;
+            qDebug() << "delete crash";
+        }
+        m_visibleCards.clear();
+        ShowMainCards(50);
+    }
+    qDebug() << "post delete crash";
+
+    if(cmd == "PAUSE"){
+        if(obj["username"] == _player->username())
+            return;
+        Pause();
+        return;
+    }
+    else if(cmd == "RESUME"){
+        if(obj["username"] == _player->username())
+            return;
+        Resume();
+        return;
+    }
+
+
+    if(cmd == "PLAYERS_ORDER"){
+
+        if(obj.contains("yours") && obj.contains("opponents")){
+            int yours = obj["yours"].toInt();
+            int opponents = obj["opponents"].toInt();
+            newCard = new CardItem(m_facePixmaps[yours-1]);
+            m_visibleCards.push_back(newCard);
+            newCard = new CardItem(m_facePixmaps[opponents-1]);
+            m_visibleCards.push_back(newCard);
+            qDebug()<<"CREATED PLAYERS ORDER CARDS CRASH";
+            ShowCards();
+            qDebug()<<"SHOWED PLAYERS ORDER CARDS CRASH";
+            for(auto card:m_visibleCards){
+                animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),10000);
+            }
+        }
+        showFadingMessage("You are "+obj["result"].toString());
+
+        qDebug() << "order crash";
+
+        return;
+
+    }
+    else if(cmd == "CARD_BATCH"){
+
+        qDebug() << "start batch crash";
+
+        for(int i=0;;i++){
+            QString key = QString::number(i);
+            if (!obj.contains(key))
+                break;
+            int n = obj[key].toInt();
+            newCard = new CardItem(m_facePixmaps[n-1],nullptr,n);
+            SetupCardConnections(newCard);
+            m_visibleCards.push_back(newCard);
+        }
+        ShowCards(75,0);
+        qDebug() << "Batch crash";
+        return;
+
+    }
+    else if(cmd == "ALMOST_TIMEOUT"){
+        showFadingMessage("10 Seconds remaining...",1000,1000,1000);
+        return;
+    }
+    else if(cmd == "TIMEOUT"){
+        emit m_visibleCards.back()->doubleClicked(m_visibleCards.back());
+        // m_cards.push_back(m_visibleCards.back());
+        // m_visibleCards.pop_back();
+        // qDebug() << "TIMEOUT crash";
+        // for(auto card:m_visibleCards){
+        //     animateDeal(card,card->pos(),QPointF(card->pos().x(),1000),1000);
+
+        // }
+        return;
+    }
+    else if(cmd == "ROUND_RESULT"){
+        showFadingMessage("You got:"+obj[_player->username()].toString()+"\nYour opponent:"+obj["opponent"].toString()
+                          +"\nYou "+obj["result"].toString()+" this round",1000,5000,1000);
+        for(auto& card:m_cards){
+            if(card->scene() == _scene)
+                _scene->removeItem(card);
+            delete card;
+        }
+        m_cards.clear();
+    }
+    else if(cmd == "MATCH_RESULT"){
+        QMessageBox::information(this,
+                                 tr("Match Result"),
+                                 obj["msg"].toString());
+        accept();
+        deleteLater();
+    }
+
+
+    //ShowCards();
+
+
+}
+
+void GamePage::Pause(int ms){
+    qDebug() << "in pause";
+    ui->graphicsView->setInteractive(false);
+    for (auto *item : _scene->items())
+        item->setEnabled(false);
+
+    overlay = new PauseOverlay(_scene->sceneRect(),"Paused");
+    _scene->addItem(overlay);
+
+    _pauseTimer->start(ms);
+}
+void GamePage::Resume(){
+    ui->graphicsView->setInteractive(true);
+    for (auto *item : _scene->items())
+        item->setEnabled(true);
+
+    _scene->removeItem(overlay);
+    delete overlay;
+    overlay = nullptr;
+    _pauseTimer->stop();
+}
+
+void GamePage::PauseResHandle()
+{
+    if(!isPaused){
+        QJsonObject obj;
+        obj["cmd"] = "PAUSED";
+        obj["username"] = _player->username();
+        _controller->sendJson(obj);
+
+        ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/ResumeDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/ResumeHover.png);
+                                      }
+                                    )");
+        _pause--;
+        isPaused = true;
+        Pause();
+    }
+    else if(isPaused){
+        QJsonObject obj;
+        obj["cmd"] = "RESUMED";
+        obj["username"] = _player->username();
+        _controller->sendJson(obj);
+
+        ui->respauseBtn->setStyleSheet(R"(
+                                      QPushButton {
+                                        border: none;
+                                        background-image: url(:/Images/assets/PauseDefault.png);
+                                        background-repeat: no-repeat;
+                                        background-position: center;
+                                      }
+                                      QPushButton:pressed {
+                                        background-image: url(:/Images/assets/PauseHover.png);
+                                      }
+                                    )");
+
+        isPaused = false;
+        Resume();
+
+        if(_pause == 0){
+            ui->respauseBtn->setDisabled(true);
+        }
+    }
+
+}
+
+void GamePage::ChangeCards(){
+
+    qDebug() << "in change cards";
+    QJsonObject obj;
+    obj["cmd"] = "CHANGE_REQ";
+    obj["username"] = _player->username();
+    _controller->sendJson(obj);
+
+}
+
+
+
+
+

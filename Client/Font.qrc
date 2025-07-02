@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Font/balatro.ttf</file>
+    </qresource>
+</RCC>
