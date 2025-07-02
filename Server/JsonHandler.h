@@ -9,6 +9,7 @@
 #include"RegisterCommand.h"
 #include"GetHistoryCommand.h"
 #include"EditCommand.h"
+#include"ForgotCommand.h"
 #include"GameManager.h"
 #include"Users.h"
 
@@ -32,6 +33,7 @@ private:
     RegisterCommand _registerHandler;
     GetHistoryCommand _historyHandler;
     EditCommand _editHandler;
+    ForgotCommand _forgotHandler;
     GameManager* gm;
 
     Users* dataBase;

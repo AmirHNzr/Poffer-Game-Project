@@ -14,6 +14,9 @@ JsonHandler::JsonHandler(GameManager* gm,Users* u,QObject* parent)
 
     connect(&_editHandler,&EditCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
     connect(&_editHandler,&EditCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
+
+    connect(&_forgotHandler,&ForgotCommand::ExecuteSuccessfully,this,&JsonHandler::ValidationSuccessful);
+    connect(&_forgotHandler,&ForgotCommand::ValidationFailed,this,&JsonHandler::ValidationFailed);
 }
 
 
@@ -30,6 +33,11 @@ void JsonHandler::Commands(const QJsonObject& obj,QTcpSocket* _current)
     else if(cmd == "REGISTER"){
         _registerHandler[dataBase];
         _registerHandler(obj);
+    }
+    else if(cmd == "FORGOT"){
+        qDebug() << "in forgot";
+        _forgotHandler[dataBase];
+        _forgotHandler(obj);
     }
     else if(cmd == "GET_HISTORY"){
         _historyHandler[dataBase];
