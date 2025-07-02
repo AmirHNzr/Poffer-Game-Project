@@ -80,6 +80,9 @@ private:
     QueueEntry _currPlayer;
     GamePhase _gamePhase = GamePhase::None;
 
+    int ChangeIndex[2];
+    int ChangeIndexCnt;
+
 
     int _startedSessions;
     int _gameRound;

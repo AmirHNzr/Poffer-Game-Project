@@ -161,6 +161,46 @@ void GameSession::operator()(const QJsonObject &obj)
         SendData(pause,_playerOrder[1].socket);
 
     }
+    else if(cmd == "CHANGE_REQ"){
+        if(_innerRound == 1 || _innerRound == 5) return;
+        QJsonObject req;
+        req["cmd"] = "CHANGE_REQ_RECEIVED";
+        if(_playerOrder[0].username == obj["username"].toString())
+            SendData(req,_playerOrder[1].socket);
+        else
+            SendData(req,_playerOrder[0].socket);
+    }
+    else if(cmd == "CHANGE_REQ_ACCEPTED"){
+        ChangeIndexCnt = 0;
+        QJsonObject req;
+        req["cmd"] = "CHANGE_ACCEPTED";
+        SendData(req,_playerOrder[0].socket);
+        SendData(req,_playerOrder[1].socket);
+    }
+    else if(cmd == "CHANGE_RECEIVED"){
+        if(obj["username"].toString() == _playerOrder[0].username){
+            ChangeIndex[0] = obj["index"].toInt();
+            ChangeIndexCnt++;
+        }
+        else{
+            ChangeIndex[1] = obj["index"].toInt();
+            ChangeIndexCnt++;
+        }
+        if(ChangeIndexCnt == 2){
+            int temp = _playersCards[_playerOrder[0].username].at(ChangeIndex[0]);
+            _playersCards[_playerOrder[0].username].at(ChangeIndex[0]) = _playersCards[_playerOrder[1].username].at(ChangeIndex[1]);
+            _playersCards[_playerOrder[1].username].at(ChangeIndex[1]) = temp;
+
+            QJsonObject obj2;
+            obj2["cmd"] = "CHANGE_DONE";
+            obj2["card"] = _playersCards[_playerOrder[0].username].at(ChangeIndex[0]);
+            SendData(obj2,_playerOrder[0].socket);
+            obj2["card"] = _playersCards[_playerOrder[1].username].at(ChangeIndex[1]);
+            SendData(obj2,_playerOrder[1].socket);
+
+            ChangeIndexCnt=0;
+        }
+    }
 }
 
 void GameSession::onPlayerDisconnected()
