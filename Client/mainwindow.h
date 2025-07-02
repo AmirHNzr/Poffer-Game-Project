@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QInputDialog>
 #include <QHostAddress>
 #include<QStyle>
 #include"UserController.h"
@@ -40,6 +41,8 @@ private slots:
     void UserStateChanged(QAbstractSocket::SocketState);
     void UserErrorOccurred(QAbstractSocket::SocketError);
 
+    void on_btnForget_clicked();
+
 protected:
 
 private:
@@ -47,6 +50,8 @@ private:
     UserPage* _userPage;
     UserController* _controller;
     PlayerInfo* _player;
+    QInputDialog* msgBox;
+
 
     bool permission = false;
 

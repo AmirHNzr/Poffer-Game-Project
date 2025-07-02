@@ -47,6 +47,7 @@ void MainWindow::SetupConnection()
     connect(_userPage,&QDialog::finished,this,[this](int) {
                 this->show();
             });
+
 }
 
 void MainWindow::on_lnIP_textChanged(const QString &arg1)
@@ -284,4 +285,33 @@ void MainWindow::Regex()
 
 
 
+
+
+void MainWindow::on_btnForget_clicked()
+{
+    bool ok = false;
+    QString Username = QInputDialog::getText(
+        this,
+        "Enter Your Username",
+        "Username:",
+        QLineEdit::Normal,
+        "Your Username Here.",
+        &ok
+        );
+
+    bool okPh = false;
+    QString Phone = QInputDialog::getText(
+        this,
+        "Enter Your Phone number",
+        "Phone number:",
+        QLineEdit::Normal,
+        "Your Number Here.",
+        &okPh
+        );
+
+    if(!okPh || !ok) return;
+
+    _controller->ForgetPass(Username,Phone);
+
+}
 
