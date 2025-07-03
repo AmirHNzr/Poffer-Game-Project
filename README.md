@@ -69,3 +69,10 @@ This is where the match is played.
 
 5. **End of Match**  
    - After 3 rounds, compare round-win number of each player.
+---
+
+## Screenshots  
+### Login/Register
+![Login](screenshots/LoginRegister.png)
+### Main Menu
+![Main Menu](screenshots/MainMenu.png)
