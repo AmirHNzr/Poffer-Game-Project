@@ -10,9 +10,10 @@
 
 struct QueueEntry {
     QueueEntry(QString u,QTcpSocket* s){username = u;socket=s;wins=0;}
-    QueueEntry(){wins = 0;}
+    QueueEntry(){wins = 0;timeout=0;}
     QString username;
     QTcpSocket* socket;
+    int timeout;
     int wins;
     History hist;
 };

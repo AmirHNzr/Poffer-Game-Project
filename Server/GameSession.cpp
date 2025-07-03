@@ -384,6 +384,35 @@ void GameSession::onTimeout()
         // haltDone = false;
 
         timeoutCnt = 0;
+
+        if(_currPlayer.username == _playerOrder[0].username){
+            _playerOrder[0].timeout++;
+            if(_playerOrder[0].timeout == 2){
+                QJsonObject obj;
+                obj["cmd"] = "MATCH_RESULT";
+                obj["msg"] = "Match ended and you won";
+                SendData(obj,_playerOrder[1].socket);
+                obj["msg"] = "Match ended and you lost";
+                SendData(obj,_playerOrder[0].socket);
+
+                AddHistoryToDB(1,0,"by 2 timeouts");
+
+            }
+        }
+        else{
+            _playerOrder[1].timeout++;
+            if(_playerOrder[1].timeout == 2){
+                QJsonObject obj;
+                obj["cmd"] = "MATCH_RESULT";
+                obj["msg"] = "Match ended and you won";
+                SendData(obj,_playerOrder[0].socket);
+                obj["msg"] = "Match ended and you lost";
+                SendData(obj,_playerOrder[1].socket);
+
+                AddHistoryToDB(0,1,"by 2 timeouts");
+
+            }
+        }
     }
 
 }
